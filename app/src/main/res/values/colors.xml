@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primaryColor">#1AB394</color>
+    <color name="primaryLightColor">#1AB394</color>
+    <color name="primaryDarkColor">#23C6C8</color>
+    <color name="primaryTextColor">#ffffff</color>
+    <color name="cardViewHeaderColor">#E8EAF6</color>
+    <color name="cardViewHeaderTextColor">#EC4758</color>
+    <color name="label_color_list_service">#ACACAC</color>
+
+</resources>
