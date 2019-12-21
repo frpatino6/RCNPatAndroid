@@ -20,4 +20,6 @@
     <dimen name="appbar_padding_top">8dp</dimen>
     <dimen name="badge_text_size">10dp</dimen>
     <dimen name="name_user_service">20dp</dimen>
+    <dimen name="icon_size">40dp</dimen>
+    <dimen name="icon_margin">20dp</dimen>
 </resources>
