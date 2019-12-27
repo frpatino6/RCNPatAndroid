@@ -22,6 +22,7 @@ import com.rcn.pat.Global.ServiceAdapter;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.R;
 import com.rcn.pat.ViewModels.ListUserServices;
+import com.rcn.pat.ViewModels.PausaReasons;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
 
     private ServiceAdapter adapter;
     private ArrayList<ListUserServices> data;
+    private ArrayList<PausaReasons> dataPausaReasons;
     private ProgressDialog dialogo;
     private LinearLayoutManager layoutManager;
     private RecyclerView recyclerView;
@@ -76,7 +78,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                             data = gson.fromJson(res, token.getType());
                             adapter = new ServiceAdapter(data, new onClickVIewDetail() {
                                 @Override
-                                public void onClick(float idServicio) {
+                                public void onClick(ListUserServices idServicio) {
                                     goDetailService(idServicio);
                                 }
                             });
@@ -92,10 +94,12 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         );
     }
 
-    private void goDetailService(float idServicio) {
+
+
+    private void goDetailService(ListUserServices idServicio) {
+        GlobalClass.getInstance().setCurrentService(idServicio);
         Intent intent = null;
         intent = new Intent(ListDriverServicesActivity.this, MainActivity.class);
-        intent.putExtra("idServicio",idServicio);
         startActivity(intent);
     }
 

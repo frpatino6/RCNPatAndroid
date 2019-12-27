@@ -84,7 +84,7 @@ public class BackgroundLocationService extends Service {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
+    @Override               
     public void onCreate() {
         Log.i(TAG, "onCreate");
         locationRepository = new LocationRepository(getApplicationContext());
@@ -93,8 +93,8 @@ public class BackgroundLocationService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, "channel_01")
-                .setContentTitle("Foreground Service")
-                .setContentText("fernando")
+                .setContentTitle("RCN P.A.T")
+                .setContentText("PAT se está ejecutando")
                 .setSmallIcon(R.drawable.icon)
                 .setContentIntent(pendingIntent)
                 .build();
@@ -154,19 +154,6 @@ public class BackgroundLocationService extends Service {
             manager.createNotificationChannel(serviceChannel);
         }
     }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private Notification getNotification() {
-
-        NotificationChannel channel = new NotificationChannel("channel_01", "My Channel", NotificationManager.IMPORTANCE_DEFAULT);
-
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
-
-        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "channel_01").setAutoCancel(true);
-        return builder.build();
-    }
-
 
     public class LocationServiceBinder extends Binder {
         public BackgroundLocationService getService() {

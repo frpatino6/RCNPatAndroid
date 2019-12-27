@@ -2,10 +2,13 @@ package com.rcn.pat.Global;
 
 import android.app.Application;
 
+import com.rcn.pat.ViewModels.ListUserServices;
+
 
 public class GlobalClass extends Application {
     private static GlobalClass instance;
     private String docNumber;
+    private ListUserServices currentService;
     private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
 
     public static GlobalClass getInstance() {
@@ -26,6 +29,14 @@ public class GlobalClass extends Application {
 
     public void setDocNumber(String docNumber) {
         this.docNumber = docNumber;
+    }
+
+    public ListUserServices getCurrentService() {
+        return currentService;
+    }
+
+    public void setCurrentService(ListUserServices currentService) {
+        this.currentService = currentService;
     }
 
     @Override

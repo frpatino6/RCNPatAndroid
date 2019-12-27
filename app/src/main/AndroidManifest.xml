@@ -35,7 +35,7 @@
                 <action android:name="android.accessibilityservice.AccessibilityService" />
             </intent-filter>
         </service>
-        <service android:name=".Notifications.GPFirebaseService">
+        <service android:name=".Notifications.PatFirebaseService">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>

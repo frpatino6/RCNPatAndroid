@@ -53,14 +53,14 @@ public class ServiceAdapter extends RecyclerView.Adapter<ServiceAdapter.MyViewHo
             @Override
             public void onClick(View v) {
                 if (_event != null)
-                    _event.onClick(dataSet.get(listPosition).getId());
+                    _event.onClick(dataSet.get(listPosition));
             }
         });
         layoutCompanyView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (_event != null)
-                    _event.onClick(dataSet.get(listPosition).getId());
+                    _event.onClick(dataSet.get(listPosition));
             }
         });
 

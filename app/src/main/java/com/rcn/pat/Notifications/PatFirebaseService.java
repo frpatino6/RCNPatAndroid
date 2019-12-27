@@ -11,10 +11,10 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.rcn.pat.R;
 
-public class GPFirebaseService extends FirebaseMessagingService {
-    private static final String TAG = "GPFirebaseService";
+public class PatFirebaseService extends FirebaseMessagingService {
+    private static final String TAG = "PatFirebaseService";
 
-    public GPFirebaseService() {
+    public PatFirebaseService() {
     }
 
     @Override
@@ -28,14 +28,6 @@ public class GPFirebaseService extends FirebaseMessagingService {
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
-
-            if (/* Check if data needs to be processed by long running job */ true) {
-                // For long-running tasks (10 seconds or more) use Firebase Job Dispatcher.
-
-            } else {
-                // Handle message within 10 seconds
-
-            }
 
         }
 

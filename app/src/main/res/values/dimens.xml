@@ -22,4 +22,5 @@
     <dimen name="name_user_service">20dp</dimen>
     <dimen name="icon_size">40dp</dimen>
     <dimen name="icon_margin">20dp</dimen>
+    <dimen name="font_size_detail_services">20dp</dimen>
 </resources>

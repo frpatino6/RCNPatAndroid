@@ -105,21 +105,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:text="&#xf249;"
         android:textColor="#62727b"
         android:textSize="@dimen/icon_size"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fontTextView4"
+        app:layout_constraintTop_toBottomOf="@+id/lblDescription"
         app:solid_icon="false" />
 
     <TextView
         android:id="@+id/lblNombreSolicitante"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
+        android:textSize="@dimen/font_size_detail_services"
         app:layout_constraintBottom_toBottomOf="@+id/fontTextView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/fontTextView"
@@ -129,8 +130,9 @@
         android:id="@+id/lblPhone"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="16dp"
         android:layout_marginEnd="8dp"
+        android:textSize="@dimen/font_size_detail_services"
         app:layout_constraintBottom_toBottomOf="@+id/fontTextView2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/fontTextView2"
@@ -143,6 +145,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
+        android:textSize="@dimen/font_size_detail_services"
         app:layout_constraintBottom_toBottomOf="@+id/fontTextView3"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/fontTextView3"
@@ -153,22 +156,27 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
+        android:lines="4"
+        android:maxLines="4"
+
+        android:textSize="@dimen/font_size_detail_services"
         app:layout_constraintBottom_toBottomOf="@+id/fontTextView4"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/fontTextView4"
-        app:layout_constraintTop_toTopOf="@+id/fontTextView4" />
+        app:layout_constraintStart_toEndOf="@+id/fontTextView3"
+        app:layout_constraintTop_toTopOf="@+id/fontTextView4"
+        app:layout_constraintVertical_bias="0.25" />
 
     <TextView
         android:id="@+id/lblObservations"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/fontTextView5"
+        android:textSize="@dimen/font_size_detail_services"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/fontTextView5"
-        app:layout_constraintTop_toTopOf="@+id/fontTextView5" />
+        app:layout_constraintStart_toStartOf="@+id/lblDescription"
+        app:layout_constraintTop_toBottomOf="@+id/lblDescription" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
