@@ -23,6 +23,7 @@ public class LocationRepository {
             @Override
             protected Void doInBackground(Void... voids) {
                 myDataBase.dao().insertLocation(location);
+                List<MyLocation> data = getLocations();
                 return null;
             }
         }.execute();
@@ -51,6 +52,19 @@ public class LocationRepository {
             }.execute();
         }
     }
+    public void deleteAllLocation() {
+
+
+            new AsyncTask<Void, Void, Void>() {
+                @Override
+                protected Void doInBackground(Void... voids) {
+                    myDataBase.dao().deleteAllLocation();
+                    return null;
+                }
+            }.execute();
+
+    }
+
 
     public void deleteLocation(final MyLocation location) {
         new AsyncTask<Void, Void, Void>() {
@@ -66,7 +80,7 @@ public class LocationRepository {
         return myDataBase.dao().getLocation(id);
     }
 
-    public LiveData<List<MyLocation>> getLocations() {
-        return myDataBase.dao().fetchAllLocation();
+    public List<MyLocation> getLocations() {
+        return myDataBase.dao().getAllSections();
     }
 }

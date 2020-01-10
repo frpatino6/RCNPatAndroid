@@ -7,6 +7,10 @@ import com.rcn.pat.ViewModels.ListUserServices;
 
 public class GlobalClass extends Application {
     private static GlobalClass instance;
+    private boolean isPaused = false;
+    private boolean isStarted = false;
+    private boolean isStoped = true;
+
     private String docNumber;
     private ListUserServices currentService;
     private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
@@ -37,6 +41,30 @@ public class GlobalClass extends Application {
 
     public void setCurrentService(ListUserServices currentService) {
         this.currentService = currentService;
+    }
+
+    public boolean isPaused() {
+        return isPaused;
+    }
+
+    public void setPaused(boolean paused) {
+        isPaused = paused;
+    }
+
+    public boolean isStarted() {
+        return isStarted;
+    }
+
+    public void setStarted(boolean started) {
+        isStarted = started;
+    }
+
+    public boolean isStoped() {
+        return isStoped;
+    }
+
+    public void setStoped(boolean stoped) {
+        isStoped = stoped;
     }
 
     @Override

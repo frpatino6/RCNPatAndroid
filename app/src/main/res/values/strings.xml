@@ -9,7 +9,9 @@
     <string name="action_sign_in">Ingresar</string>
     <string name="error_user_empty">Usuario es requerido</string>
     <string name="error_password_empty">Contraseña es requerido</string>
+
     <string name="Texto_Boton_Ok">Aceptar</string>
+    <string name="Texto_Boton_Cancel">Cancelar</string>
     <string name="title_bar_company">Empresa</string>
     <string name="title_parameters">Parametros</string>
     <string name="action_accept">Aceptar</string>
@@ -61,5 +63,11 @@
     <string name="msg_token_fmt">pat token</string>
     <string name="autenticationError">Nombre de usuario o contraseña inválido</string>
     <string name="AutorizationError">No tiene autorización para el ingreso</string>
+
+    <string name="fa_play">&#xf144;</string>
+    <string name="fa_pause">&#xf28b;</string>
+    <string name="fa_stop">&#xf28d;</string>
+    <string name="fa_phone">&#xf879;</string>
+
 
 </resources>

@@ -25,6 +25,8 @@ public interface LocationDao {
     @Query("SELECT * FROM MyLocation WHERE id =:id")
     LiveData<MyLocation> getLocation(int id);
 
+    @Query("SELECT * FROM MyLocation")
+    List<MyLocation> getAllSections();
 
     @Update
     void updateLocation(MyLocation location);
@@ -32,4 +34,7 @@ public interface LocationDao {
 
     @Delete
     void deleteLocation(MyLocation location);
+
+    @Query("DELETE FROM MyLocation")
+    void deleteAllLocation();
 }

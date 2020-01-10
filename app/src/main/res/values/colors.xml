@@ -7,5 +7,7 @@
     <color name="cardViewHeaderColor">#E8EAF6</color>
     <color name="cardViewHeaderTextColor">#EC4758</color>
     <color name="label_color_list_service">#ACACAC</color>
+    <color name="cancel_button">#ec4758</color>
+
 
 </resources>

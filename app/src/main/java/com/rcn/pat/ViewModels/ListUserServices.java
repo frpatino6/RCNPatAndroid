@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class ListUserServices {
-    private float Id;
+    private Integer Id;
     private String SolicitudNombre;
     private String FechaInicial;
     private String FechaFinal;
@@ -23,7 +23,7 @@ public class ListUserServices {
 
     // Getter Methods
 
-    public float getId() {
+    public Integer getId() {
         return Id;
     }
 
@@ -111,7 +111,7 @@ public class ListUserServices {
 
     // Setter Methods
 
-    public void setId(float Id) {
+    public void setId(Integer Id) {
         this.Id = Id;
     }
 

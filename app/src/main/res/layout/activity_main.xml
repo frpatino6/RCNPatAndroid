@@ -61,18 +61,18 @@
         app:layout_constraintTop_toTopOf="@+id/statusTextView"
         app:solid_icon="false" />
 
-    <info.androidhive.fontawesome.FontTextView
+    <TextView
         android:id="@+id/fontTextView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:text="@string/fa_blender_phone_solid"
+        android:text="@string/fa_phone"
         android:textColor="#62727b"
-        android:textSize="30sp"
+        android:textSize="@dimen/icon_size"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/fontTextView"
-        app:solid_icon="true" />
+      />
 
     <info.androidhive.fontawesome.FontTextView
         android:id="@+id/fontTextView3"
@@ -159,8 +159,7 @@
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
         android:lines="4"
-        android:maxLines="4"
-
+        android:maxLines="3"
         android:textSize="@dimen/font_size_detail_services"
         app:layout_constraintBottom_toBottomOf="@+id/fontTextView4"
         app:layout_constraintEnd_toEndOf="parent"
@@ -178,5 +177,64 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@+id/lblDescription"
         app:layout_constraintTop_toBottomOf="@+id/lblDescription" />
+
+    <LinearLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="32dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lblObservations">
+
+        <TableLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TableRow
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:weightSum="12">
+
+                <TextView
+                    android:visibility="invisible"
+                    android:id="@+id/btnPause"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:text="@string/fa_pause"
+                    android:textColor="#62727b"
+                    android:textSize="@dimen/icon_size" />
+
+                <TextView
+                    android:id="@+id/btnStart"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:gravity="center"
+                    android:text="@string/fa_play"
+                    android:textColor="#62727b"
+                    android:textSize="@dimen/icon_size" />
+
+                <TextView
+                    android:visibility="invisible"
+                    android:id="@+id/btnStop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="4"
+                    android:gravity="right"
+                    android:text="@string/fa_stop"
+                    android:textColor="#62727b"
+                    android:textSize="@dimen/icon_size" />
+            </TableRow>
+
+
+        </TableLayout>
+
+
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

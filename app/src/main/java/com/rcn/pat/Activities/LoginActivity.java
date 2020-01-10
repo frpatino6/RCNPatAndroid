@@ -44,6 +44,7 @@ public class LoginActivity extends AppCompatActivity {
     private String deviceToken;
     private ProgressDialog dialogo;
     private StringEntity entity;
+    private boolean isError;
     private EditText txtPws;
     private EditText txtUserName;
 
@@ -73,7 +74,7 @@ public class LoginActivity extends AppCompatActivity {
         dialogo.setIndeterminate(false);
         dialogo.setCancelable(false);
         dialogo.show();
-
+        Log.d(TAG, deviceToken);
         final String username = txtUserName.getText().toString();
         String pws = txtPws.getText().toString();
         String url = GlobalClass.getInstance().getUrlServices() + "login?UserName=" + username + "&Password=" + pws + "&Token=" + deviceToken + "&Plataforma=android";
@@ -87,6 +88,7 @@ public class LoginActivity extends AppCompatActivity {
 
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
+                isError = true;
                 showMessage(responseBody);
             }
 
@@ -94,20 +96,24 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onFinish() {
                 super.onFinish();
-                dialogo.hide();
+                if (!isError) {
+                    dialogo.hide();
 
-                if (!data.getAuthenticated()) {
-                    showMessage(getString(R.string.autenticationError));
-                    return;
-                }
-                if (!data.getAuthorized()) {
-                    showMessage(getString(R.string.AutorizationError));
-                    return;
+
+                    if (!data.getAuthenticated()) {
+                        showMessage(getString(R.string.autenticationError));
+                        return;
+                    }
+                    if (!data.getAuthorized()) {
+                        showMessage(getString(R.string.AutorizationError));
+                        return;
+                    }
+
+                    Intent intent = null;
+                    intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
+                    startActivity(intent);
                 }
 
-                Intent intent = null;
-                intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
-                startActivity(intent);
             }
 
             @SuppressLint("RestrictedApi")
@@ -215,4 +221,6 @@ public class LoginActivity extends AppCompatActivity {
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);
         getCurrentDeviceToken();
     }
+
+
 }
