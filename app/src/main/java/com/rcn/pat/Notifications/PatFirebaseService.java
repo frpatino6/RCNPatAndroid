@@ -13,9 +13,12 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.rcn.pat.Activities.ListDriverServicesActivity;
+import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.R;
 
 import java.util.List;
@@ -23,7 +26,11 @@ import java.util.List;
 public class PatFirebaseService extends FirebaseMessagingService {
     private static final String TAG = "PatFirebaseService";
     private static final int ID_NOTIFICACION_CREAR = 1;
+    public static final String SERVICE_RESULT = "com.service.result";
+    public static final String SERVICE_MESSAGE = "com.service.message";
     NotificationManager notificationManager;
+    private LocalBroadcastManager localBroadcastManager;
+
     public PatFirebaseService() {
 
     }
@@ -31,7 +38,7 @@ public class PatFirebaseService extends FirebaseMessagingService {
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createNotification(String remoteMessage, String title) {
 
-        if(notificationManager == null )
+        if (notificationManager == null)
             notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         Intent nIntent = new Intent();
@@ -52,6 +59,10 @@ public class PatFirebaseService extends FirebaseMessagingService {
                         nIntent = recentTaskInfo.baseIntent;
                         nIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     }
+                } else {
+                    nIntent = new Intent(this, MainActivity.class);
+                    PendingIntent contentIntent = PendingIntent.getActivity(this, 0, nIntent,
+                            PendingIntent.FLAG_UPDATE_CURRENT);
                 }
             }
         }
@@ -99,6 +110,18 @@ public class PatFirebaseService extends FirebaseMessagingService {
         notificationManager.notify(0, notificationBuilder.build());
     }
 
+    @Override
+    public void onCreate() {
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
+    }
+
+    private void sendResult(String message) {
+        Intent intent = new Intent(SERVICE_RESULT);
+        if (message != null)
+            intent.putExtra(SERVICE_MESSAGE, message);
+        localBroadcastManager.sendBroadcast(intent);
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
@@ -108,11 +131,12 @@ public class PatFirebaseService extends FirebaseMessagingService {
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage.getFrom());
         //sendNotification(remoteMessage);
-        createNotification(remoteMessage.getData().values().toArray()[1].toString(),remoteMessage.getData().values().toArray()[2].toString());
+        createNotification(remoteMessage.getData().values().toArray()[1].toString(), remoteMessage.getData().values().toArray()[2].toString());
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());
 
+            sendResult(remoteMessage.getData().values().toArray()[1].toString());
         }
 
         // Check if message contains a notification payload.remoteMessage.getData().values().toArray()[1]

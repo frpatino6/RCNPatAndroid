@@ -4,12 +4,14 @@ import android.annotation.SuppressLint;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
@@ -31,11 +33,16 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 public class SyncDataService extends Service {
 
     public static final String TAG = SyncDataService.class.getSimpleName();
+    public static final String SERVICE_RESULT = "com.service.result";
+    public static final String SERVICE_MESSAGE = "com.service.message";
+    // This is the object that receives interactions from clients.
+    private final IBinder mBinder = new LocalBinder();
     public int counter = 0;
-    Context context;
-    long oldTime = 0;
-    List<MyLocation> result;
+    private Context context;
+    private LocalBroadcastManager localBroadcastManager;
     private LocationRepository locationRepository;
+    private long oldTime = 0;
+    private List<MyLocation> result;
     private Timer timer;
     private TimerTask timerTask;
 
@@ -94,6 +101,7 @@ public class SyncDataService extends Service {
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
 
                 locationRepository.deleteAllLocation();
+                sendResult("!yeah");
             }
         });
     }
@@ -120,12 +128,18 @@ public class SyncDataService extends Service {
                 Log.i("in timer", "in timer ++++  " + (counter++));
                 locationRepository = new LocationRepository(getApplicationContext());
                 result = locationRepository.getLocations();
+
                 if (result != null && result.size() > 0)
                     asyncListMaterialsByProduction();
-
-
             }
         };
+    }
+
+    private void sendResult(String message) {
+        Intent intent = new Intent(SERVICE_RESULT);
+        if (message != null)
+            intent.putExtra(SERVICE_MESSAGE, message);
+        localBroadcastManager.sendBroadcast(intent);
     }
 
     public void startTimer() {
@@ -139,9 +153,6 @@ public class SyncDataService extends Service {
         timer.schedule(timerTask, 1000, 10000); //
     }
 
-    /**
-     * not needed
-     */
     public void stoptimertask() {
         //stop the timer, if it's not already null
         if (timer != null) {
@@ -153,7 +164,14 @@ public class SyncDataService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+
+        return mBinder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
     }
 
     @Override
@@ -172,5 +190,11 @@ public class SyncDataService extends Service {
         super.onStartCommand(intent, flags, startId);
         startTimer();
         return START_STICKY;
+    }
+
+    public class LocalBinder extends Binder {
+        SyncDataService getService() {
+            return SyncDataService.this;
+        }
     }
 }

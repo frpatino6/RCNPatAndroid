@@ -42,8 +42,15 @@ public class ListUserServices {
         String str = null;
 
         try {
-            date = inputFormat.parse(FechaInicial);
-            str = outputFormat.format(date);
+
+            if(FechaInicial!=null) {
+                date = inputFormat.parse(FechaInicial);
+                str = outputFormat.format(date);
+            }
+            else
+            {
+                return "";
+            }
         } catch (ParseException e) {
             e.printStackTrace();
         }

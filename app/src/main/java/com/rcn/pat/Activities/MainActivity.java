@@ -5,10 +5,12 @@ import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
@@ -27,6 +29,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,7 +43,9 @@ import com.rcn.pat.Global.CustomListViewDialog;
 import com.rcn.pat.Global.DataAdapter;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.SyncDataService;
+import com.rcn.pat.Notifications.PatFirebaseService;
 import com.rcn.pat.R;
+import com.rcn.pat.ViewModels.ListUserServices;
 import com.rcn.pat.ViewModels.PausaReasons;
 
 import java.util.ArrayList;
@@ -57,6 +62,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean mTracking = false;
     Context ctx;
     private AlarmManager alarmManager;
+    private BroadcastReceiver broadcastReceiver;
+    private BroadcastReceiver broadcastReceiverBackgroundService;
+    private BroadcastReceiver broadcastReceiverFirebase;
     private TextView btnPause;
     private TextView btnStart;
     private TextView btnStop;
@@ -142,6 +150,57 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         );
     }
 
+    private void asyncServiceInfoById() {
+
+        dialogo = new ProgressDialog(MainActivity.this);
+        dialogo.setMessage("Actualizando datos del servicio...");
+        dialogo.setIndeterminate(false);
+        dialogo.setCancelable(false);
+        dialogo.show();
+
+        String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver/" + GlobalClass.getInstance().getCurrentService().getId().toString();
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.setTimeout(60000);
+        RequestParams params = new RequestParams();
+
+        client.get(url, new TextHttpResponseHandler() {
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
+
+
+                    }
+
+                    @Override
+                    public void onFinish() {
+                        super.onFinish();
+                        dialogo.hide();
+
+                    }
+
+                    @Override
+                    public void onSuccess(int statusCode, Header[] headers, String res) {
+                        // called when response HTTP status is "200 OK"
+                        try {
+
+                            int a = 0;
+                            TypeToken<ListUserServices> token = new TypeToken<ListUserServices>() {
+                            };
+                            Gson gson = new GsonBuilder().create();
+                            // Define Response class to correspond to the JSON response returned
+                            ListUserServices data = gson.fromJson(res, token.getType());
+                            GlobalClass.getInstance().setCurrentService(data);
+                            initializaValues();
+
+
+                        } catch (JsonSyntaxException e) {
+                            e.printStackTrace();
+
+                        }
+                    }
+                }
+        );
+    }
+
     private void cancelAlarm() {
         alarmManager.cancel(pendingIntent);
         Toast.makeText(getApplicationContext(), "Alarm Cancelled", Toast.LENGTH_LONG).show();
@@ -155,7 +214,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 GlobalClass.getInstance().setPaused(true);
                 GlobalClass.getInstance().setStarted(false);
                 GlobalClass.getInstance().setStoped(false);
-                stopTracking();
+                //stopTracking();
 
             }
         });
@@ -396,7 +455,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mSensorService = new SyncDataService(getCtx());
         mServiceIntent = new Intent(getCtx(), mSensorService.getClass());
 
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String s = intent.getStringExtra(SyncDataService.SERVICE_MESSAGE);
+                // do something here.
+            }
+        };
+        broadcastReceiverBackgroundService= new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String s = intent.getStringExtra(BackgroundLocationService.SERVICE_MESSAGE);
+                // do something here.
+            }
+        };
+
+        broadcastReceiverFirebase= new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
+                //Actualiza la informaci[on del servicio
+                //asyncServiceInfoById();
+            }
+        };
+
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiver),
+                new IntentFilter(SyncDataService.SERVICE_RESULT));
+
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
+                new IntentFilter(BackgroundLocationService.SERVICE_RESULT));
+
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
+                new IntentFilter(PatFirebaseService.SERVICE_RESULT));
+    }
+
+    @Override
+    protected void onStop() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverFirebase);
+        super.onStop();
+    }
+
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
