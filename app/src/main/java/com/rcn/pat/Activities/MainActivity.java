@@ -475,7 +475,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onReceive(Context context, Intent intent) {
                 String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
                 //Actualiza la informaci[on del servicio
-                //asyncServiceInfoById();
+                asyncServiceInfoById();
             }
         };
 
