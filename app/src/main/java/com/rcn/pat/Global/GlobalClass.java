@@ -10,10 +10,15 @@ public class GlobalClass extends Application {
     private boolean isPaused = false;
     private boolean isStarted = false;
     private boolean isStoped = true;
-
+    private int minSendLocationToDatabase= 20; //Intervalo en minutos para enviar los datos de localización al backend
     private String docNumber;
     private ListUserServices currentService;
     private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
+
+    public int getMinSendLocationToDatabase() {
+        return minSendLocationToDatabase;
+    }
+
 
     public static GlobalClass getInstance() {
         return instance;

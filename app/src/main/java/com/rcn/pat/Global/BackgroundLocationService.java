@@ -25,8 +25,8 @@ import com.rcn.pat.R;
 public class BackgroundLocationService extends Service {
     private static final String TAG = "BackgroundLocationServi";
     private final LocationServiceBinder binder = new LocationServiceBinder();
-    public static final String SERVICE_RESULT = "com.service.result";
-    public static final String SERVICE_MESSAGE = "com.service.message";
+    public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
+    public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
     private final int LOCATION_INTERVAL = 500;
     private final int LOCATION_DISTANCE = 10;
     private Intent _intent;
@@ -66,8 +66,8 @@ public class BackgroundLocationService extends Service {
         initializeLocationManager();
         mLocationListener = new LocationListener(LocationManager.GPS_PROVIDER, new onLocationChange() {
             @Override
-            public void onChange() {
-                sendResult("");
+            public void onChange(Float speed) {
+                sendResult(String.valueOf(speed));
             }
         });
 
@@ -155,7 +155,7 @@ public class BackgroundLocationService extends Service {
                 locationRepository.insertLocation(loc);
 
                 if (_onLocationChange != null)
-                    _onLocationChange.onChange();
+                    _onLocationChange.onChange(location.getSpeed());
             }
 //            Toast.makeText(BackgroundLocationService.this, "LAT: " + location.getLatitude() + "\n LONG: " + location.getLongitude(), Toast.LENGTH_SHORT).show();
         }

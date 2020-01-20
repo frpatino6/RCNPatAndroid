@@ -215,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 GlobalClass.getInstance().setStarted(false);
                 GlobalClass.getInstance().setStoped(false);
                 //stopTracking();
+                toggleButtons();
 
             }
         });
@@ -465,7 +466,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         broadcastReceiverBackgroundService= new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                String s = intent.getStringExtra(BackgroundLocationService.SERVICE_MESSAGE);
+                String speed = intent.getStringExtra(BackgroundLocationService.SERVICE_MESSAGE);
+
+                if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().isPaused())
+                    startTracking();
                 // do something here.
             }
         };
@@ -475,7 +479,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onReceive(Context context, Intent intent) {
                 String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
                 //Actualiza la informaci[on del servicio
-                //asyncServiceInfoById();
+                asyncServiceInfoById();
             }
         };
 

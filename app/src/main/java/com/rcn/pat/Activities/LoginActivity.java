@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -80,7 +81,7 @@ public class LoginActivity extends AppCompatActivity {
         String url = GlobalClass.getInstance().getUrlServices() + "login?UserName=" + username + "&Password=" + pws + "&Token=" + deviceToken + "&Plataforma=android";
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(60000);
+        client.setTimeout(10000);
         String tipo = "application/json";
         RequestParams params = new RequestParams();
         entity = new StringEntity("", StandardCharsets.UTF_8);
@@ -113,6 +114,8 @@ public class LoginActivity extends AppCompatActivity {
                     intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
                     startActivity(intent);
                 }
+                else
+                    dialogo.hide();
 
             }
 
@@ -217,6 +220,9 @@ public class LoginActivity extends AppCompatActivity {
 
         InitializaControls();
         InitializaEvents();
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
 
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);
         getCurrentDeviceToken();

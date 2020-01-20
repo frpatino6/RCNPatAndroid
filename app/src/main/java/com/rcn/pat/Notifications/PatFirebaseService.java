@@ -26,8 +26,8 @@ import java.util.List;
 public class PatFirebaseService extends FirebaseMessagingService {
     private static final String TAG = "PatFirebaseService";
     private static final int ID_NOTIFICACION_CREAR = 1;
-    public static final String SERVICE_RESULT = "com.service.result";
-    public static final String SERVICE_MESSAGE = "com.service.message";
+    public static final String SERVICE_RESULT = "com.service.resultPatFirebaseService";
+    public static final String SERVICE_MESSAGE = "com.service.messagePatFirebaseService";
     NotificationManager notificationManager;
     private LocalBroadcastManager localBroadcastManager;
 

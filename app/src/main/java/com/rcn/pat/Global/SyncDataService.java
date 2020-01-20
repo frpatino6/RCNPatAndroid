@@ -33,8 +33,8 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 public class SyncDataService extends Service {
 
     public static final String TAG = SyncDataService.class.getSimpleName();
-    public static final String SERVICE_RESULT = "com.service.result";
-    public static final String SERVICE_MESSAGE = "com.service.message";
+    public static final String SERVICE_RESULT = "com.service.resultSyncDataService";
+    public static final String SERVICE_MESSAGE = "com.service.messageSyncDataService";
     // This is the object that receives interactions from clients.
     private final IBinder mBinder = new LocalBinder();
     public int counter = 0;
@@ -150,7 +150,7 @@ public class SyncDataService extends Service {
         initializeTimerTask();
 
         //schedule the timer, to wake up every 1 second
-        timer.schedule(timerTask, 1000, 10000); //
+        timer.schedule(timerTask, 1000, GlobalClass.getInstance().getMinSendLocationToDatabase() * 1000); //
     }
 
     public void stoptimertask() {
