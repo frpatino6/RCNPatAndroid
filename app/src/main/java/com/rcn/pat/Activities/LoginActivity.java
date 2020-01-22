@@ -36,6 +36,7 @@ import com.rcn.pat.ViewModels.LoginViewModel;
 import java.nio.charset.StandardCharsets;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.conn.ConnectTimeoutException;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class LoginActivity extends AppCompatActivity {
@@ -75,13 +76,13 @@ public class LoginActivity extends AppCompatActivity {
         dialogo.setIndeterminate(false);
         dialogo.setCancelable(false);
         dialogo.show();
-        Log.d(TAG, deviceToken);
+
         final String username = txtUserName.getText().toString();
         String pws = txtPws.getText().toString();
         String url = GlobalClass.getInstance().getUrlServices() + "login?UserName=" + username + "&Password=" + pws + "&Token=" + deviceToken + "&Plataforma=android";
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(10000);
+        client.setTimeout(20000);
         String tipo = "application/json";
         RequestParams params = new RequestParams();
         entity = new StringEntity("", StandardCharsets.UTF_8);
@@ -90,7 +91,12 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
                 isError = true;
-                showMessage(responseBody);
+                Log.e("DB", String.valueOf(error instanceof ConnectTimeoutException));
+
+                if (statusCode == 0)
+                    showMessage(error.getMessage());
+                else
+                    showMessage(responseBody);
             }
 
             @SuppressLint("RestrictedApi")
@@ -113,8 +119,7 @@ public class LoginActivity extends AppCompatActivity {
                     Intent intent = null;
                     intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
                     startActivity(intent);
-                }
-                else
+                } else
                     dialogo.hide();
 
             }
@@ -221,11 +226,14 @@ public class LoginActivity extends AppCompatActivity {
         InitializaControls();
         InitializaEvents();
 
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);
         getCurrentDeviceToken();
+
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new
+                    StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
     }
 
 

@@ -19,8 +19,9 @@
     <dimen name="padding_button_menu">45dp</dimen>
     <dimen name="appbar_padding_top">8dp</dimen>
     <dimen name="badge_text_size">10dp</dimen>
-    <dimen name="name_user_service">20dp</dimen>
-    <dimen name="icon_size">45dp</dimen>
+    <dimen name="name_user_service">17dp</dimen>
+    <dimen name="icon_size">22dp</dimen>
+    <dimen name="action_icon_size">44dp</dimen>
     <dimen name="detail_text_size">40dp</dimen>
     <dimen name="icon_margin">20dp</dimen>
     <dimen name="font_size_detail_services">20dp</dimen>

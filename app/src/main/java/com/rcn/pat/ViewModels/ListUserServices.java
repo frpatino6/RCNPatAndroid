@@ -33,7 +33,7 @@ public class ListUserServices {
 
     public String getFechaInicial() {
         String inputPattern = "yyyy-MM-dd'T'HH:mm:ss";
-        String outputPattern = "dd/MM/yyyy HH:mm";
+        String outputPattern = "HH:mm";
 
         SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
         SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
@@ -59,7 +59,7 @@ public class ListUserServices {
 
     public String getFechaFinal() {
         String inputPattern = "yyyy-MM-dd'T'HH:mm:ss";
-        String outputPattern = "dd/MM/yyyy HH:mm";
+        String outputPattern = "HH:mm";
 
         SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
         SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);

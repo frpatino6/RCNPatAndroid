@@ -321,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initializaValues() {
         lblNombreSolicitante.setText(GlobalClass.getInstance().getCurrentService().getNombreUsuarioSolicitante());
         lblPhone.setText(GlobalClass.getInstance().getCurrentService().getCelularSolicitante());
-        lblInitTime.setText(GlobalClass.getInstance().getCurrentService().getFechaInicial() + " " + GlobalClass.getInstance().getCurrentService().getFechaFinal());
+        lblInitTime.setText(GlobalClass.getInstance().getCurrentService().getFechaInicial() + " a " + GlobalClass.getInstance().getCurrentService().getFechaFinal());
         lblDescription.setText(GlobalClass.getInstance().getCurrentService().getDescripcionRecorrido());
         lblObservations.setText(GlobalClass.getInstance().getCurrentService().getObservaciones());
     }
@@ -450,7 +450,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initializaControls();
         initializaValues();
         initializaEvents();
-        asyncListPausaReasons();
+        //asyncListPausaReasons();
         toggleButtons();
         ctx = this;
         mSensorService = new SyncDataService(getCtx());
@@ -505,6 +505,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverFirebase);
         super.onStop();
     }
+
 
 
     @Override
