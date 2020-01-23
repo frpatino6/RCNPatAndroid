@@ -129,8 +129,9 @@ public class SyncDataService extends Service {
                 locationRepository = new LocationRepository(getApplicationContext());
                 result = locationRepository.getLocations();
 
-                if (result != null && result.size() > 0)
-                    asyncListMaterialsByProduction();
+                if (GlobalClass.getInstance().isNetworkAvailable())
+                    if (result != null && result.size() > 0)
+                        asyncListMaterialsByProduction();
             }
         };
     }

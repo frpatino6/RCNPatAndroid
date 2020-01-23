@@ -1,6 +1,9 @@
 package com.rcn.pat.Global;
 
 import android.app.Application;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 
 import com.rcn.pat.ViewModels.ListUserServices;
 
@@ -77,5 +80,12 @@ public class GlobalClass extends Application {
         super.onCreate();
         instance = this;
 
+    }
+
+    public boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 }
