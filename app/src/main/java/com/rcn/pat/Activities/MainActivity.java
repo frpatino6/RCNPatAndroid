@@ -13,7 +13,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
@@ -27,7 +26,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -418,9 +416,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         //Inicia servicio que se ejecuta cada X tiempo para enviar al backEnd la traza leida hasta el momento
-            if (!isMyServiceRunning(mSensorService.getClass())) {
-                startService(mServiceIntent);
-            }
+        if (!isMyServiceRunning(mSensorService.getClass())) {
+            startService(mServiceIntent);
+        }
 
 
     }
@@ -479,14 +477,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //prepare service
         ButterKnife.bind(this);
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
-       // this.getApplication().startService(intent);
-        this.getApplication().startForegroundService(intent);
+        // this.getApplication().startService(intent);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+            this.getApplication().startForegroundService(intent);
+        else
+            this.getApplication().startService(intent);
+
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         initializaControls();
         initializaValues();
         initializaEvents();
-        //asyncListPausaReasons();
+        asyncListPausaReasons();
         toggleButtons();
         ctx = this;
         mSensorService = new SyncDataService(getCtx());
@@ -524,14 +526,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onStart() {
         super.onStart();
-        /*LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiver),
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiver),
                 new IntentFilter(SyncDataService.SERVICE_RESULT));
 
-       /* LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
-                new IntentFilter(BackgroundService.SERVICE_RESULT));*/
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
+                new IntentFilter(BackgroundService.SERVICE_RESULT));
 
-        /*LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
-                new IntentFilter(PatFirebaseService.SERVICE_RESULT));*/
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
+                new IntentFilter(PatFirebaseService.SERVICE_RESULT));
     }
 
     @Override

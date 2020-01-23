@@ -106,11 +106,15 @@ public class BackgroundService extends Service {
                 .setSmallIcon(R.drawable.icon)
                 .setContentIntent(pendingIntent)
                 .build();
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+            startForeground(1, getNotification());
+        else
+            startForeground(1, notification);
 
-        startForeground(1, getNotification());
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
     }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private Notification getNotification() {
 
@@ -122,6 +126,7 @@ public class BackgroundService extends Service {
         Notification.Builder builder = new Notification.Builder(getApplicationContext(), "channel_01").setAutoCancel(true);
         return builder.build();
     }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
