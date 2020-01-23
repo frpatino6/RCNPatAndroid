@@ -1,5 +1,6 @@
 package com.rcn.pat.Activities;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
@@ -14,9 +15,11 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -25,20 +28,26 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
-import com.rcn.pat.Global.BackgroundLocationService;
+import com.rcn.pat.BuildConfig;
+import com.rcn.pat.Global.BackgroundService;
 import com.rcn.pat.Global.CustomListViewDialog;
 import com.rcn.pat.Global.DataAdapter;
 import com.rcn.pat.Global.GlobalClass;
@@ -51,14 +60,13 @@ import com.rcn.pat.ViewModels.PausaReasons;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.ButterKnife;
 import cz.msebera.android.httpclient.Header;
-
-import static android.Manifest.permission.ACCESS_FINE_LOCATION;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private final int PERMISSION_REQUEST_CODE = 200;
-    public BackgroundLocationService gpsService;
+    public BackgroundService gpsService;
     public boolean mTracking = false;
     Context ctx;
     private AlarmManager alarmManager;
@@ -85,15 +93,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             String name = className.getClassName();
-            if (name.endsWith("BackgroundLocationService")) {
-                gpsService = ((BackgroundLocationService.LocationServiceBinder) service).getService();
-                startButton.setEnabled(true);
-                statusTextView.setText("GPS Ready");
+            if (name.endsWith("BackgroundService")) {
+                gpsService = ((BackgroundService.LocationServiceBinder) service).getService();
             }
         }
 
         public void onServiceDisconnected(ComponentName className) {
-            if (className.getClassName().equals("BackgroundLocationService")) {
+            if (className.getClassName().equals("BackgroundService")) {
                 gpsService = null;
             }
         }
@@ -373,24 +379,50 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    private void openSettings() {
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null);
+        intent.setData(uri);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
     public void startTracking() {
-        //check for permission
-        if (ContextCompat.checkSelfPermission(getApplicationContext(), ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            gpsService.startTracking();
-            mTracking = true;
+        Dexter.withActivity(this)
+                .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                .withListener(new PermissionListener() {
+                    @Override
+                    public void onPermissionGranted(PermissionGrantedResponse response) {
+                        gpsService.startTracking();
+                        mTracking = true;
+                        GlobalClass.getInstance().setPaused(false);
+                        GlobalClass.getInstance().setStarted(true);
+                        GlobalClass.getInstance().setStoped(false);
+                        toggleButtons();
+                    }
 
-            GlobalClass.getInstance().setPaused(false);
-            GlobalClass.getInstance().setStarted(true);
-            GlobalClass.getInstance().setStoped(false);
 
-            //Inicia servicio que se ejecuta cada X tiempo para enviar al backEnd la traza leida hasta el momento
+                    @Override
+                    public void onPermissionDenied(PermissionDeniedResponse response) {
+                        if (response.isPermanentlyDenied()) {
+                            openSettings();
+                        }
+                    }
+
+                    @Override
+                    public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+                        token.continuePermissionRequest();
+                    }
+                }).check();
+
+
+        //Inicia servicio que se ejecuta cada X tiempo para enviar al backEnd la traza leida hasta el momento
             if (!isMyServiceRunning(mSensorService.getClass())) {
                 startService(mServiceIntent);
             }
-            toggleButtons();
-        } else {
-            ActivityCompat.requestPermissions(this, new String[]{ACCESS_FINE_LOCATION}, PERMISSION_REQUEST_CODE);
-        }
+
+
     }
 
     public void stopTracking() {
@@ -435,6 +467,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -444,9 +477,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //initialize views
         setWidgetIds();
         //prepare service
-        final Intent intent = new Intent(this.getApplication(), BackgroundLocationService.class);
-        this.getApplication().startService(intent);
+        ButterKnife.bind(this);
+        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
+       // this.getApplication().startService(intent);
+        this.getApplication().startForegroundService(intent);
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+
         initializaControls();
         initializaValues();
         initializaEvents();
@@ -463,10 +499,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // do something here.
             }
         };
-        broadcastReceiverBackgroundService= new BroadcastReceiver() {
+        broadcastReceiverBackgroundService = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                String speed = intent.getStringExtra(BackgroundLocationService.SERVICE_MESSAGE);
+                String speed = intent.getStringExtra(BackgroundService.SERVICE_MESSAGE);
 
                 if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().isPaused())
                     startTracking();
@@ -474,7 +510,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         };
 
-        broadcastReceiverFirebase= new BroadcastReceiver() {
+        broadcastReceiverFirebase = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
@@ -488,35 +524,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onStart() {
         super.onStart();
-        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiver),
+        /*LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiver),
                 new IntentFilter(SyncDataService.SERVICE_RESULT));
 
-        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
-                new IntentFilter(BackgroundLocationService.SERVICE_RESULT));
+       /* LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
+                new IntentFilter(BackgroundService.SERVICE_RESULT));*/
 
-        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
-                new IntentFilter(PatFirebaseService.SERVICE_RESULT));
+        /*LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
+                new IntentFilter(PatFirebaseService.SERVICE_RESULT));*/
     }
 
     @Override
     protected void onStop() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverFirebase);
+        // LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        //LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
+        //LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverFirebase);
         super.onStop();
     }
 
-
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0
-                    && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startTracking();
-            }
-        }
-    }
 }

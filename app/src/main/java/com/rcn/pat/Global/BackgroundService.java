@@ -22,8 +22,8 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.R;
 
-public class BackgroundLocationService extends Service {
-    private static final String TAG = "BackgroundLocationServi";
+public class BackgroundService extends Service {
+    private static final String TAG = "BackgroundService";
     private final LocationServiceBinder binder = new LocationServiceBinder();
     public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
     public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
@@ -107,11 +107,21 @@ public class BackgroundLocationService extends Service {
                 .setContentIntent(pendingIntent)
                 .build();
 
-        startForeground(1, notification);
+        startForeground(1, getNotification());
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
     }
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    private Notification getNotification() {
 
+        NotificationChannel channel = new NotificationChannel("channel_01", "My Channel", NotificationManager.IMPORTANCE_DEFAULT);
+
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        notificationManager.createNotificationChannel(channel);
+
+        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "channel_01").setAutoCancel(true);
+        return builder.build();
+    }
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -157,7 +167,7 @@ public class BackgroundLocationService extends Service {
                 if (_onLocationChange != null)
                     _onLocationChange.onChange(location.getSpeed());
             }
-//            Toast.makeText(BackgroundLocationService.this, "LAT: " + location.getLatitude() + "\n LONG: " + location.getLongitude(), Toast.LENGTH_SHORT).show();
+//            Toast.makeText(BackgroundService.this, "LAT: " + location.getLatitude() + "\n LONG: " + location.getLongitude(), Toast.LENGTH_SHORT).show();
         }
 
         @Override
@@ -177,8 +187,8 @@ public class BackgroundLocationService extends Service {
     }
 
     public class LocationServiceBinder extends Binder {
-        public BackgroundLocationService getService() {
-            return BackgroundLocationService.this;
+        public BackgroundService getService() {
+            return BackgroundService.this;
         }
     }
 }

@@ -56,7 +56,7 @@ public class SyncDataService extends Service {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void asyncListMaterialsByProduction() {
+    private void asynGeoLocation() {
 
 
         String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
@@ -131,7 +131,7 @@ public class SyncDataService extends Service {
 
                 if (GlobalClass.getInstance().isNetworkAvailable())
                     if (result != null && result.size() > 0)
-                        asyncListMaterialsByProduction();
+                        asynGeoLocation();
             }
         };
     }
