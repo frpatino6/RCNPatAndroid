@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    tools:context=".Activities.ListDriverServicesActivity">
+
+    <androidx.cardview.widget.CardView
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="3dp"
+        android:layout_marginTop="3dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginBottom="3dp"
+        app:cardElevation="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/constraintListService"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="3dp">
+
+            <TextView
+                android:id="@+id/txtUserService"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:layout_marginTop="3dp"
+                android:layout_marginEnd="3dp"
+                android:layout_marginBottom="3dp"
+                android:background="@color/cardViewHeaderColor"
+                android:padding="10dp"
+                android:textColor="@color/cardViewHeaderTextColor"
+                android:textSize="@dimen/name_user_service"
+                android:textStyle="normal"
+                app:layout_constraintBottom_toTopOf="@+id/lblPhone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                tools:text="Giovanny Mauricio Rojas Restrepo" />
+
+            <TextView
+                android:id="@+id/lblPhone"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:text="Teléfono:"
+                android:textColor="@color/label_color_list_service"
+                android:textSize="@dimen/telephone_text_size"
+                app:layout_constraintEnd_toStartOf="@+id/txtPhone"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/txtUserService" />
+
+            <TextView
+                android:id="@+id/txtPhone"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:textSize="@dimen/telephone_text_size"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@+id/lblPhone"
+                app:layout_constraintTop_toBottomOf="@+id/txtUserService" />
+
+            <TextView
+                android:id="@+id/txtBegin"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:textSize="@dimen/telephone_text_size"
+                app:layout_constraintEnd_toStartOf="@+id/btnGoDetail"
+                app:layout_constraintStart_toStartOf="@+id/txtPhone"
+                app:layout_constraintTop_toBottomOf="@+id/txtPhone" />
+
+            <TextView
+                android:id="@+id/txtEnd"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:textSize="@dimen/telephone_text_size"
+                app:layout_constraintEnd_toStartOf="@+id/btnGoDetail"
+                app:layout_constraintStart_toStartOf="@+id/txtBegin"
+                app:layout_constraintTop_toBottomOf="@+id/txtBegin" />
+
+            <TextView
+                android:id="@+id/lblBegin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="Inicio:"
+                android:textColor="@color/label_color_list_service"
+                android:textSize="@dimen/telephone_text_size"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/lblPhone" />
+
+            <TextView
+                android:id="@+id/lblEnd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="Fin:"
+                android:textColor="@color/label_color_list_service"
+                android:textSize="@dimen/telephone_text_size"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/lblBegin" />
+
+            <ImageButton
+                android:id="@+id/btnGoDetail"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@android:color/transparent"
+                android:src="@drawable/baseline_navigate_next_black_48"
+                app:layout_constraintBottom_toBottomOf="@+id/txtEnd"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/txtBegin"
+                app:layout_constraintTop_toTopOf="@+id/txtBegin" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+    </androidx.cardview.widget.CardView>
+</androidx.constraintlayout.widget.ConstraintLayout>
