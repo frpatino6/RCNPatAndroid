@@ -3,7 +3,6 @@ package com.rcn.pat.Activities;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.AbsListView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DefaultItemAnimator;
@@ -21,7 +20,7 @@ import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.ServiceAdapter;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.R;
-import com.rcn.pat.ViewModels.ListUserServices;
+import com.rcn.pat.ViewModels.ServiceInfo;
 import com.rcn.pat.ViewModels.PausaReasons;
 
 import java.util.ArrayList;
@@ -32,7 +31,7 @@ import cz.msebera.android.httpclient.Header;
 public class ListDriverServicesActivity extends AppCompatActivity {
 
     private ServiceAdapter adapter;
-    private ArrayList<ListUserServices> data;
+    private ArrayList<ServiceInfo> data;
     private ArrayList<PausaReasons> dataPausaReasons;
     private ProgressDialog dialogo;
     private LinearLayoutManager layoutManager;
@@ -71,14 +70,14 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                         try {
 
                             int a = 0;
-                            TypeToken<List<ListUserServices>> token = new TypeToken<List<ListUserServices>>() {
+                            TypeToken<List<ServiceInfo>> token = new TypeToken<List<ServiceInfo>>() {
                             };
                             Gson gson = new GsonBuilder().create();
                             // Define Response class to correspond to the JSON response returned
                             data = gson.fromJson(res, token.getType());
                             adapter = new ServiceAdapter(data, new onClickVIewDetail() {
                                 @Override
-                                public void onClick(ListUserServices idServicio) {
+                                public void onClick(ServiceInfo idServicio) {
                                     goDetailService(idServicio);
                                 }
                             });
@@ -96,7 +95,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
 
 
 
-    private void goDetailService(ListUserServices idServicio) {
+    private void goDetailService(ServiceInfo idServicio) {
         GlobalClass.getInstance().setCurrentService(idServicio);
         Intent intent = null;
         intent = new Intent(ListDriverServicesActivity.this, MainActivity.class);

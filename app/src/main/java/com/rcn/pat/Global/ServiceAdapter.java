@@ -3,7 +3,6 @@ package com.rcn.pat.Global;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -12,7 +11,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.rcn.pat.R;
-import com.rcn.pat.ViewModels.ListUserServices;
+import com.rcn.pat.ViewModels.ServiceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,9 +20,9 @@ public class ServiceAdapter extends RecyclerView.Adapter<ServiceAdapter.MyViewHo
     private final onClickVIewDetail _event;
     List<RelativeLayout> layoutViewList = new ArrayList<>();
     private View _view;
-    private ArrayList<ListUserServices> dataSet;
+    private ArrayList<ServiceInfo> dataSet;
 
-    public ServiceAdapter(ArrayList<ListUserServices> data, onClickVIewDetail event) {
+    public ServiceAdapter(ArrayList<ServiceInfo> data, onClickVIewDetail event) {
         this.dataSet = data;
         this._event = event;
     }

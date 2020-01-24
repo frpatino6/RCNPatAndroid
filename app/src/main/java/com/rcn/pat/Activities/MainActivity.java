@@ -2,10 +2,8 @@ package com.rcn.pat.Activities;
 
 import android.Manifest;
 import android.app.ActivityManager;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -16,6 +14,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -25,7 +24,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
@@ -50,11 +48,12 @@ import com.rcn.pat.Global.BackgroundService;
 import com.rcn.pat.Global.CustomListViewDialog;
 import com.rcn.pat.Global.DataAdapter;
 import com.rcn.pat.Global.GlobalClass;
+import com.rcn.pat.Global.ServiceRepository;
 import com.rcn.pat.Global.SyncDataService;
 import com.rcn.pat.Notifications.PatFirebaseService;
 import com.rcn.pat.R;
-import com.rcn.pat.ViewModels.ListUserServices;
 import com.rcn.pat.ViewModels.PausaReasons;
+import com.rcn.pat.ViewModels.ServiceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,13 +66,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public BackgroundService gpsService;
     public boolean mTracking = false;
-    private Context ctx;
     private BroadcastReceiver broadcastReceiver;
     private BroadcastReceiver broadcastReceiverBackgroundService;
     private BroadcastReceiver broadcastReceiverFirebase;
     private TextView btnPause;
     private TextView btnStart;
     private TextView btnStop;
+    private Context ctx;
+    private ServiceInfo currentServiceInfo;
     private CustomListViewDialog customDialog;
     private ArrayList<PausaReasons> dataPausaReasons;
     private ProgressDialog dialogo;
@@ -85,8 +85,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView lblPhone;
     private SyncDataService mSensorService;
     private Intent mServiceIntent;
-    private Button startButton;
-    private TextView statusTextView;
     private ServiceConnection serviceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder service) {
             String name = className.getClassName();
@@ -101,6 +99,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     };
+    private ServiceRepository serviceRepository;
+    private Button startButton;
+    private TextView statusTextView;
     private Button stopButton;
     private Typeface typeface;
 
@@ -186,11 +187,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         try {
 
                             int a = 0;
-                            TypeToken<ListUserServices> token = new TypeToken<ListUserServices>() {
+                            TypeToken<ServiceInfo> token = new TypeToken<ServiceInfo>() {
                             };
                             Gson gson = new GsonBuilder().create();
                             // Define Response class to correspond to the JSON response returned
-                            ListUserServices data = gson.fromJson(res, token.getType());
+                            ServiceInfo data = gson.fromJson(res, token.getType());
                             GlobalClass.getInstance().setCurrentService(data);
                             initializaValues();
 
@@ -209,9 +210,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void clickOnItem(PausaReasons data) {
                 customDialog.dismiss();
-                GlobalClass.getInstance().setPaused(true);
-                GlobalClass.getInstance().setStarted(false);
-                GlobalClass.getInstance().setStoped(false);
+                GlobalClass.getInstance().getCurrentService().setPaused(true);
+                GlobalClass.getInstance().getCurrentService().setStarted(false);
+                GlobalClass.getInstance().getCurrentService().setStoped(false);
+                serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
                 //stopTracking();
                 toggleButtons();
 
@@ -226,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void confirmStartService() {
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(MainActivity.this);
 
-        if (GlobalClass.getInstance().isPaused())
+        if (GlobalClass.getInstance().getCurrentService().isPaused())
             dlgAlert.setMessage("¿Seguro de Reiniciar el servicio?");
         else
             dlgAlert.setMessage("¿Seguro de iniciar el servicio?");
@@ -256,9 +258,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //dlgAlert.setPositiveButton(getString(R.string.Texto_Boton_Ok), null);
         dlgAlert.setPositiveButton(R.string.Texto_Boton_Ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
-                GlobalClass.getInstance().setPaused(false);
-                GlobalClass.getInstance().setStarted(false);
-                GlobalClass.getInstance().setStoped(true);
+                GlobalClass.getInstance().getCurrentService().setPaused(false);
+                GlobalClass.getInstance().getCurrentService().setStarted(false);
+                GlobalClass.getInstance().getCurrentService().setStoped(true);
                 stopTracking();
 
             }
@@ -272,6 +274,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dlgAlert.setCancelable(true);
         dlgAlert.create().show();
     }
+
 
     public Context getCtx() {
         return ctx;
@@ -293,6 +296,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStart.setTypeface(typeface);
         btnStop.setTypeface(typeface);
         fontTextView2.setTypeface(typeface);
+        serviceRepository = new ServiceRepository(getApplicationContext());
+
     }
 
     private void initializaEvents() {
@@ -338,6 +343,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return false;
     }
 
+    private void openSettings() {
+        Intent intent = new Intent();
+        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        Uri uri = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null);
+        intent.setData(uri);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
     public void setTitle(String title) {
         getSupportActionBar().setHomeButtonEnabled(true);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -359,37 +373,72 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stopButton.setOnClickListener(this);
     }
 
-    private void openSettings() {
-        Intent intent = new Intent();
-        intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-        Uri uri = Uri.fromParts("package", BuildConfig.APPLICATION_ID, null);
-        intent.setData(uri);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        startActivity(intent);
+    private void startBackgroundServices() {
+        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
+        // this.getApplication().startService(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            this.getApplication().startForegroundService(intent);
+        else
+            this.getApplication().startService(intent);
+
+        this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+        mSensorService = new SyncDataService(getCtx());
+        mServiceIntent = new Intent(getCtx(), mSensorService.getClass());
+
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String s = intent.getStringExtra(SyncDataService.SERVICE_MESSAGE);
+
+            }
+        };
+        broadcastReceiverBackgroundService = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String speed = intent.getStringExtra(BackgroundService.SERVICE_MESSAGE);
+
+                if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().getCurrentService().isPaused())
+                    startTracking();
+
+            }
+        };
+
+        broadcastReceiverFirebase = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
+                //Actualiza la informaci[on del servicio
+                asyncServiceInfoById();
+            }
+        };
     }
 
     public void startTracking() {
-        startBackgroundServices();
+
 
         Dexter.withActivity(this)
                 .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(new PermissionListener() {
                     @Override
-                    public void onPermissionGranted(PermissionGrantedResponse response) {
-                        gpsService.startTracking();
-                        mTracking = true;
-                        GlobalClass.getInstance().setPaused(false);
-                        GlobalClass.getInstance().setStarted(true);
-                        GlobalClass.getInstance().setStoped(false);
-                        toggleButtons();
-                    }
-
-
-                    @Override
                     public void onPermissionDenied(PermissionDeniedResponse response) {
                         if (response.isPermanentlyDenied()) {
                             openSettings();
                         }
+                    }
+
+                    @Override
+                    public void onPermissionGranted(PermissionGrantedResponse response) {
+                        gpsService.startTracking();
+                        mTracking = true;
+                        if (GlobalClass.getInstance().getCurrentService().isPaused())
+                            serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+                        else
+                            serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
+
+                        GlobalClass.getInstance().getCurrentService().setPaused(false);
+                        GlobalClass.getInstance().getCurrentService().setStarted(true);
+                        GlobalClass.getInstance().getCurrentService().setStoped(false);
+                        toggleButtons();
                     }
 
                     @Override
@@ -407,14 +456,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    public void stopTracking() {
-        mTracking = false;
-        gpsService.stopTracking();
-        stopService(mServiceIntent);
-        toggleButtons();
-        stopBackgroundServices();
-    }
-
     private void stopBackgroundServices() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
@@ -425,21 +466,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    public void stopTracking() {
+        mTracking = false;
+        gpsService.stopTracking();
+        stopService(mServiceIntent);
+        toggleButtons();
+        serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+        stopBackgroundServices();
+    }
+
     private void toggleButtons() {
 
-
-        if (GlobalClass.getInstance().isStarted()) {
+        if (GlobalClass.getInstance().getCurrentService().isStarted()) {
             btnPause.setVisibility(View.VISIBLE);
             btnStart.setVisibility(View.INVISIBLE);
             btnStop.setVisibility(View.VISIBLE);
         }
-
-        if (GlobalClass.getInstance().isPaused()) {
+        if (GlobalClass.getInstance().getCurrentService().isPaused()) {
             btnPause.setVisibility(View.INVISIBLE);
             btnStart.setVisibility(View.VISIBLE);
             btnStop.setVisibility(View.VISIBLE);
         }
-        if (GlobalClass.getInstance().isStoped()) {
+        if (GlobalClass.getInstance().getCurrentService().isStoped()) {
             btnPause.setVisibility(View.INVISIBLE);
             btnStop.setVisibility(View.INVISIBLE);
             btnStart.setVisibility(View.VISIBLE);
@@ -471,55 +519,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setWidgetIds();
         //prepare service
         ButterKnife.bind(this);
-
-
         initializaControls();
         initializaValues();
         initializaEvents();
         asyncListPausaReasons();
         toggleButtons();
         ctx = this;
+        new asyncGetServiceById().execute();
+        startBackgroundServices();
 
-    }
-
-    private void startBackgroundServices() {
-        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
-        // this.getApplication().startService(intent);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
-            this.getApplication().startForegroundService(intent);
-        else
-            this.getApplication().startService(intent);
-
-        this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-        mSensorService = new SyncDataService(getCtx());
-        mServiceIntent = new Intent(getCtx(), mSensorService.getClass());
-
-        broadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String s = intent.getStringExtra(SyncDataService.SERVICE_MESSAGE);
-
-            }
-        };
-        broadcastReceiverBackgroundService = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String speed = intent.getStringExtra(BackgroundService.SERVICE_MESSAGE);
-
-                if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().isPaused())
-                    startTracking();
-
-            }
-        };
-
-        broadcastReceiverFirebase = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
-                //Actualiza la informaci[on del servicio
-                asyncServiceInfoById();
-            }
-        };
     }
 
     @Override
@@ -541,6 +549,60 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (mTracking == false)
             stopBackgroundServices();
         super.onStop();
+    }
+
+    class asyncGetAllServices extends AsyncTask {
+
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
+        protected Object doInBackground(Object[] objects) {
+
+            List<ServiceInfo> serviceInfos = serviceRepository.getService();
+            serviceRepository.deleteAllService();
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(Object o) {
+
+
+            super.onPostExecute(o);
+        }
+
+        @Override
+        protected void onPreExecute() {
+
+
+        }
+    }
+
+    class asyncGetServiceById extends AsyncTask {
+
+        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+        @Override
+        protected Object doInBackground(Object[] objects) {
+
+            int id = GlobalClass.getInstance().getCurrentService().getId();
+            currentServiceInfo = serviceRepository.getService(id);
+            return true;
+        }
+
+        @Override
+        protected void onPostExecute(Object o) {
+
+            if (currentServiceInfo != null) {
+                GlobalClass.getInstance().setCurrentService(currentServiceInfo);
+                toggleButtons();
+
+            }
+            super.onPostExecute(o);
+        }
+
+        @Override
+        protected void onPreExecute() {
+
+
+        }
     }
 
 }

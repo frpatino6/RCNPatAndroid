@@ -7,61 +7,63 @@ import android.os.AsyncTask;
 import androidx.lifecycle.LiveData;
 import androidx.room.Room;
 
+import com.rcn.pat.ViewModels.ServiceInfo;
+
 import java.util.List;
 
-public class LocationRepository {
+public class ServiceRepository {
     private String DB_NAME = "location_db";
     private MyDataBase myDataBase;
 
-    public LocationRepository(Context context) {
+    public ServiceRepository(Context context) {
         myDataBase = Room.databaseBuilder(context, MyDataBase.class, DB_NAME)
                 .fallbackToDestructiveMigration()
                 .build();
     }
 
 
-    public void insertLocation(final MyLocation location) {
+    public void insertService(final ServiceInfo serviceInfo) {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                myDataBase.dao().insertLocation(location);
-                List<MyLocation> data = getLocations();
+                myDataBase.servicesDao().insertServiceInfo(serviceInfo);
+                List<ServiceInfo> data = getService();
                 return null;
             }
         }.execute();
     }
 
-    public void updateLocation(final MyLocation location) {
+    public void updateService(final ServiceInfo ServiceInfo) {
 
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                myDataBase.dao().updateLocation(location);
+                myDataBase.servicesDao().updateServiceInfo(ServiceInfo);
                 return null;
             }
         }.execute();
     }
 
-    public void deleteLocation(final int id) {
-        final LiveData<MyLocation> location = getLocation(id);
-        if (location != null) {
+    public void deleteService(final int id) {
+        final ServiceInfo ServiceInfo = getService(id);
+        if (ServiceInfo != null) {
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... voids) {
-                    myDataBase.dao().deleteLocation(location.getValue());
+                    myDataBase.servicesDao().deleteServiceInfo(ServiceInfo);
                     return null;
                 }
             }.execute();
         }
     }
 
-    public void deleteAllLocation() {
+    public void deleteAllService() {
 
 
             new AsyncTask<Void, Void, Void>() {
                 @Override
                 protected Void doInBackground(Void... voids) {
-                    myDataBase.dao().deleteAllLocation();
+                    myDataBase.servicesDao().deleteAllServiceInfo();
                     return null;
                 }
             }.execute();
@@ -69,21 +71,21 @@ public class LocationRepository {
     }
 
 
-    public void deleteLocation(final MyLocation location) {
+    public void deleteService(final ServiceInfo ServiceInfo) {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                myDataBase.dao().deleteLocation(location);
+                myDataBase.servicesDao().deleteServiceInfo(ServiceInfo);
                 return null;
             }
         }.execute();
     }
 
-    public LiveData<MyLocation> getLocation(int id) {
-        return myDataBase.dao().getLocation(id);
+    public ServiceInfo getService(int id) {
+        return myDataBase.servicesDao().getServiceInfo(id);
     }
 
-    public List<MyLocation> getLocations() {
-        return myDataBase.dao().getAllSections();
+    public List<ServiceInfo> getService() {
+        return myDataBase.servicesDao().getAllSections();
     }
 }
