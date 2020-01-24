@@ -24,6 +24,7 @@ import com.rcn.pat.R;
 
 public class BackgroundService extends Service {
     private static final String TAG = "BackgroundService";
+    private static final String NOTIFICATION_CHANNEL_ID = "channel_01";
     private final LocationServiceBinder binder = new LocationServiceBinder();
     public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
     public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
@@ -34,20 +35,6 @@ public class BackgroundService extends Service {
     private LocationRepository locationRepository;
     private LocationListener mLocationListener;
     private LocationManager mLocationManager;
-    private NotificationManager notificationManager;
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    "channel_01",
-                    "My Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
-        }
-    }
 
     private void initializeLocationManager() {
         if (mLocationManager == null) {
@@ -94,42 +81,47 @@ public class BackgroundService extends Service {
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
-        Log.i(TAG, "onCreate");
+        Log.i(TAG, "BackgroundService onCreate");
         locationRepository = new LocationRepository(getApplicationContext());
-        createNotificationChannel();
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this,
-                0, notificationIntent, 0);
-        Notification notification = new NotificationCompat.Builder(this, "channel_01")
-                .setContentTitle("RCN P.A.T")
-                .setContentText("PAT se está ejecutando")
-                .setSmallIcon(R.drawable.icon)
-                .setContentIntent(pendingIntent)
-                .build();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
-            startForeground(1, getNotification());
-        else
-            startForeground(1, notification);
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            Notification.Builder builder = new Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
+                    .setContentTitle(getString(R.string.app_name))
+                    .setVisibility(Notification.VISIBILITY_PUBLIC)
+                    .setChannelId(NOTIFICATION_CHANNEL_ID)
+                    .setContentText("PAT Está en ejecución")
+                    .setOnlyAlertOnce(true)
+                    .setPriority(Notification.PRIORITY_HIGH)
+                    .setCategory(Notification.CATEGORY_SERVICE)
+                    .setAutoCancel(true);
+
+            Notification notification = builder.build();
+            startForeground(2, notification);
+
+        } else {
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                    .setContentTitle(getString(R.string.app_name))
+                    .setContentText("PAT Está en ejecución")
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setAutoCancel(true);
+
+            Notification notification = builder.build();
+
+            startForeground(1, notification);
+        }
+        stopSelf();
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    private Notification getNotification() {
-
-        NotificationChannel channel = new NotificationChannel("channel_01", "My Channel", NotificationManager.IMPORTANCE_DEFAULT);
-
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-        notificationManager.createNotificationChannel(channel);
-
-        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "channel_01").setAutoCancel(true);
-        return builder.build();
-    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        stopForeground(true);
+        Log.i(TAG, "BackgroundService onDestroy");
         if (mLocationManager != null) {
             try {
                 mLocationManager.removeUpdates(mLocationListener);

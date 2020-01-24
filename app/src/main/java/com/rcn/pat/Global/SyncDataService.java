@@ -100,6 +100,8 @@ public class SyncDataService extends Service {
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
 
+                int numLocations = locationRepository.getLocations().size();
+                Log.i(TAG, "Locations sended: " + numLocations);
                 locationRepository.deleteAllLocation();
                 sendResult("!yeah");
             }

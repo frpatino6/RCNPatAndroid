@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -63,11 +64,10 @@ import cz.msebera.android.httpclient.Header;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final int PERMISSION_REQUEST_CODE = 200;
+
     public BackgroundService gpsService;
     public boolean mTracking = false;
-    Context ctx;
-    private AlarmManager alarmManager;
+    private Context ctx;
     private BroadcastReceiver broadcastReceiver;
     private BroadcastReceiver broadcastReceiverBackgroundService;
     private BroadcastReceiver broadcastReceiverFirebase;
@@ -85,7 +85,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView lblPhone;
     private SyncDataService mSensorService;
     private Intent mServiceIntent;
-    private PendingIntent pendingIntent;
     private Button startButton;
     private TextView statusTextView;
     private ServiceConnection serviceConnection = new ServiceConnection() {
@@ -203,11 +202,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
         );
-    }
-
-    private void cancelAlarm() {
-        alarmManager.cancel(pendingIntent);
-        Toast.makeText(getApplicationContext(), "Alarm Cancelled", Toast.LENGTH_LONG).show();
     }
 
     private void confirmCausePauseDialog() {
@@ -365,18 +359,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         stopButton.setOnClickListener(this);
     }
 
-    private void startAlarm() {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, 0, pendingIntent);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, 0, pendingIntent);
-        } else {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, 0, pendingIntent);
-        }
-
-    }
-
     private void openSettings() {
         Intent intent = new Intent();
         intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
@@ -387,6 +369,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void startTracking() {
+        startBackgroundServices();
+
         Dexter.withActivity(this)
                 .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(new PermissionListener() {
@@ -428,6 +412,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         gpsService.stopTracking();
         stopService(mServiceIntent);
         toggleButtons();
+        stopBackgroundServices();
+    }
+
+    private void stopBackgroundServices() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
+        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
+        this.getApplication().stopService(intent);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.cancelAll();
+
     }
 
     private void toggleButtons() {
@@ -476,14 +471,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setWidgetIds();
         //prepare service
         ButterKnife.bind(this);
-        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
-        // this.getApplication().startService(intent);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
-            this.getApplication().startForegroundService(intent);
-        else
-            this.getApplication().startService(intent);
 
-        this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         initializaControls();
         initializaValues();
@@ -491,6 +479,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         asyncListPausaReasons();
         toggleButtons();
         ctx = this;
+
+    }
+
+    private void startBackgroundServices() {
+        final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
+        // this.getApplication().startService(intent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            this.getApplication().startForegroundService(intent);
+        else
+            this.getApplication().startService(intent);
+
+        this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         mSensorService = new SyncDataService(getCtx());
         mServiceIntent = new Intent(getCtx(), mSensorService.getClass());
 
@@ -498,7 +498,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onReceive(Context context, Intent intent) {
                 String s = intent.getStringExtra(SyncDataService.SERVICE_MESSAGE);
-                // do something here.
+
             }
         };
         broadcastReceiverBackgroundService = new BroadcastReceiver() {
@@ -508,7 +508,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().isPaused())
                     startTracking();
-                // do something here.
+
             }
         };
 
@@ -520,7 +520,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 asyncServiceInfoById();
             }
         };
-
     }
 
     @Override
@@ -538,9 +537,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onStop() {
-        // LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
-        //LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
-        //LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverFirebase);
+
+        if (mTracking == false)
+            stopBackgroundServices();
         super.onStop();
     }
 
