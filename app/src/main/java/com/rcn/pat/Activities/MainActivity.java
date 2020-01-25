@@ -430,7 +430,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     public void onPermissionGranted(PermissionGrantedResponse response) {
                         gpsService.startTracking();
                         mTracking = true;
-                        if (GlobalClass.getInstance().getCurrentService().isPaused())
+                        if(GlobalClass.getInstance().getCurrentService().getIdService() > 0)
                             serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
                         else
                             serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
@@ -593,7 +593,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (currentServiceInfo != null) {
                 GlobalClass.getInstance().setCurrentService(currentServiceInfo);
                 toggleButtons();
-
             }
             super.onPostExecute(o);
         }
