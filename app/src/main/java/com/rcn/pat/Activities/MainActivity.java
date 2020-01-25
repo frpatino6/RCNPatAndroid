@@ -522,7 +522,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         initializaControls();
         initializaValues();
         initializaEvents();
-        asyncListPausaReasons();
+        //asyncListPausaReasons();
         toggleButtons();
         ctx = this;
         new asyncGetServiceById().execute();
