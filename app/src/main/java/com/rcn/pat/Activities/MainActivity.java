@@ -90,6 +90,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String name = className.getClassName();
             if (name.endsWith("BackgroundService")) {
                 gpsService = ((BackgroundService.LocationServiceBinder) service).getService();
+
+
             }
         }
 
@@ -104,54 +106,76 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView statusTextView;
     private Button stopButton;
     private Typeface typeface;
+    private boolean haveActiveService;
 
     private void asyncListPausaReasons() {
 
-        dialogo = new ProgressDialog(MainActivity.this);
-        dialogo.setMessage("Cargando datos...");
-        dialogo.setIndeterminate(false);
-        dialogo.setCancelable(false);
-        dialogo.show();
+        try {
+            dialogo = new ProgressDialog(MainActivity.this);
+            dialogo.setMessage("Cargando datos...");
+            dialogo.setIndeterminate(false);
+            dialogo.setCancelable(false);
+            dialogo.show();
 
-        String url = GlobalClass.getInstance().getUrlServices() + "lstPause";
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(60000);
-        RequestParams params = new RequestParams();
+            String url = GlobalClass.getInstance().getUrlServices() + "lstPause";
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.setTimeout(60000);
+            RequestParams params = new RequestParams();
 
-        client.get(url, new TextHttpResponseHandler() {
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
+            client.get(url, new TextHttpResponseHandler() {
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
 
-
-                    }
-
-                    @Override
-                    public void onFinish() {
-                        super.onFinish();
-                        dialogo.hide();
-
-                    }
-
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, String res) {
-                        // called when response HTTP status is "200 OK"
-                        try {
-
-                            int a = 0;
-                            TypeToken<List<PausaReasons>> token = new TypeToken<List<PausaReasons>>() {
-                            };
-                            Gson gson = new GsonBuilder().create();
-                            // Define Response class to correspond to the JSON response returned
-                            dataPausaReasons = gson.fromJson(res, token.getType());
-
-
-                        } catch (JsonSyntaxException e) {
-                            e.printStackTrace();
 
                         }
+
+                        @Override
+                        public void onFinish() {
+                            super.onFinish();
+                            dialogo.hide();
+
+                        }
+
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers, String res) {
+                            // called when response HTTP status is "200 OK"
+                            try {
+
+                                int a = 0;
+                                TypeToken<List<PausaReasons>> token = new TypeToken<List<PausaReasons>>() {
+                                };
+                                Gson gson = new GsonBuilder().create();
+                                // Define Response class to correspond to the JSON response returned
+                                dataPausaReasons = gson.fromJson(res, token.getType());
+
+                                DataAdapter dataAdapter = new DataAdapter(dataPausaReasons, new DataAdapter.RecyclerViewItemClickListener() {
+                                    @Override
+                                    public void clickOnItem(PausaReasons data) {
+                                        customDialog.dismiss();
+                                        GlobalClass.getInstance().getCurrentService().setPaused(true);
+                                        GlobalClass.getInstance().getCurrentService().setStarted(false);
+                                        GlobalClass.getInstance().getCurrentService().setStoped(false);
+                                        serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+                                        //stopTracking();
+                                        toggleButtons();
+
+                                    }
+                                });
+                                customDialog = new CustomListViewDialog(MainActivity.this, dataAdapter);
+                                customDialog.show();
+                                customDialog.setCanceledOnTouchOutside(false);
+
+
+                            } catch (JsonSyntaxException e) {
+                                e.printStackTrace();
+
+                            }
+                        }
                     }
-                }
-        );
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void asyncServiceInfoById() {
@@ -206,23 +230,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void confirmCausePauseDialog() {
-        DataAdapter dataAdapter = new DataAdapter(dataPausaReasons, new DataAdapter.RecyclerViewItemClickListener() {
-            @Override
-            public void clickOnItem(PausaReasons data) {
-                customDialog.dismiss();
-                GlobalClass.getInstance().getCurrentService().setPaused(true);
-                GlobalClass.getInstance().getCurrentService().setStarted(false);
-                GlobalClass.getInstance().getCurrentService().setStoped(false);
-                serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
-                //stopTracking();
-                toggleButtons();
+        asyncListPausaReasons();
 
-            }
-        });
-        customDialog = new CustomListViewDialog(MainActivity.this, dataAdapter);
-
-        customDialog.show();
-        customDialog.setCanceledOnTouchOutside(false);
     }
 
     private void confirmStartService() {
@@ -274,7 +283,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         dlgAlert.setCancelable(true);
         dlgAlert.create().show();
     }
-
 
     public Context getCtx() {
         return ctx;
@@ -430,7 +438,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     public void onPermissionGranted(PermissionGrantedResponse response) {
                         gpsService.startTracking();
                         mTracking = true;
-                        if(GlobalClass.getInstance().getCurrentService().getIdService() > 0)
+                        if (GlobalClass.getInstance().getCurrentService().getIdService() > 0)
                             serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
                         else
                             serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
@@ -468,32 +476,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void stopTracking() {
         mTracking = false;
-        gpsService.stopTracking();
+        //
         stopService(mServiceIntent);
         toggleButtons();
-        serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
         stopBackgroundServices();
+        new asyncDeleteService().execute();
+
     }
 
     private void toggleButtons() {
 
-        if (GlobalClass.getInstance().getCurrentService().isStarted()) {
-            btnPause.setVisibility(View.VISIBLE);
-            btnStart.setVisibility(View.INVISIBLE);
-            btnStop.setVisibility(View.VISIBLE);
-        }
-        if (GlobalClass.getInstance().getCurrentService().isPaused()) {
-            btnPause.setVisibility(View.INVISIBLE);
-            btnStart.setVisibility(View.VISIBLE);
-            btnStop.setVisibility(View.VISIBLE);
-        }
-        if (GlobalClass.getInstance().getCurrentService().isStoped()) {
-            btnPause.setVisibility(View.INVISIBLE);
-            btnStop.setVisibility(View.INVISIBLE);
-            btnStart.setVisibility(View.VISIBLE);
-        }
+        if (haveActiveService) {
+            btnPause.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
+            btnStart.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
+            btnStop.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
+        } else {
 
-        statusTextView.setText((mTracking) ? "TRACKING" : "GPS Ready");
+            if (GlobalClass.getInstance().getCurrentService().isStarted()) {
+                btnPause.setVisibility(View.VISIBLE);
+                btnStart.setVisibility(View.INVISIBLE);
+                btnStop.setVisibility(View.VISIBLE);
+            }
+            if (GlobalClass.getInstance().getCurrentService().isPaused()) {
+                btnPause.setVisibility(View.INVISIBLE);
+                btnStart.setVisibility(View.VISIBLE);
+                btnStop.setVisibility(View.VISIBLE);
+            }
+            if (GlobalClass.getInstance().getCurrentService().isStoped()) {
+                btnPause.setVisibility(View.INVISIBLE);
+                btnStop.setVisibility(View.INVISIBLE);
+                btnStart.setVisibility(View.VISIBLE);
+            }
+
+            statusTextView.setText((mTracking) ? "TRACKING" : "GPS Ready");
+        }
     }
 
     @Override
@@ -512,21 +528,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        setTitle("Servicio " + GlobalClass.getInstance().getCurrentService().getSolicitudNombre());
+        try {
+            setContentView(R.layout.activity_main);
+            setTitle("Servicio " + GlobalClass.getInstance().getCurrentService().getSolicitudNombre());
 
-        //initialize views
-        setWidgetIds();
-        //prepare service
-        ButterKnife.bind(this);
-        initializaControls();
-        initializaValues();
-        initializaEvents();
-        //asyncListPausaReasons();
-        toggleButtons();
-        ctx = this;
-        new asyncGetServiceById().execute();
-        startBackgroundServices();
+            //initialize views
+            setWidgetIds();
+            //prepare service
+            ButterKnife.bind(this);
+            initializaControls();
+            initializaValues();
+            initializaEvents();
+            ctx = this;
+            startBackgroundServices();
+            new asyncGetServiceById().execute();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
     }
 
@@ -545,19 +564,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     protected void onStop() {
-
-        if (mTracking == false)
-            stopBackgroundServices();
         super.onStop();
     }
 
-    class asyncGetAllServices extends AsyncTask {
+    class asyncDeleteService extends AsyncTask {
 
         @RequiresApi(api = Build.VERSION_CODES.KITKAT)
         @Override
         protected Object doInBackground(Object[] objects) {
 
-            List<ServiceInfo> serviceInfos = serviceRepository.getService();
             serviceRepository.deleteAllService();
             return true;
         }
@@ -565,6 +580,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected void onPostExecute(Object o) {
 
+
+            gpsService.stopTracking();
 
             super.onPostExecute(o);
         }
@@ -593,6 +610,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             if (currentServiceInfo != null) {
                 GlobalClass.getInstance().setCurrentService(currentServiceInfo);
                 toggleButtons();
+                //startTracking();
+
             }
             super.onPostExecute(o);
         }

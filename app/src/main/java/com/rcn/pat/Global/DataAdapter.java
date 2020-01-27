@@ -39,6 +39,7 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.CuasePauseView
 
     @Override
     public int getItemCount() {
+
         return mDataset.size();
     }
 

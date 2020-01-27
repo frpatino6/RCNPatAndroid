@@ -106,7 +106,6 @@ public class LoginActivity extends AppCompatActivity {
                 if (!isError) {
                     dialogo.hide();
 
-
                     if (!data.getAuthenticated()) {
                         showMessage(getString(R.string.autenticationError));
                         return;

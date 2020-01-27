@@ -120,8 +120,6 @@ public class BackgroundService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopForeground(true);
-        Log.i(TAG, "BackgroundService onDestroy");
         if (mLocationManager != null) {
             try {
                 mLocationManager.removeUpdates(mLocationListener);

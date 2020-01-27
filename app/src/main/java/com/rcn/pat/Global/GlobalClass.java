@@ -49,6 +49,7 @@ public class GlobalClass extends Application {
         this.currentService = currentService;
     }
 
+
     @Override
     public void onCreate() {
         super.onCreate();
