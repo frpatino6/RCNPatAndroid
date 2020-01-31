@@ -111,7 +111,7 @@ public class SyncDataService extends Service {
     private String gettime() {
         SimpleDateFormat sdf = null;
         try {
-            sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss aa", Locale.getDefault());
+            sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
 
         } catch (Exception e) {
             e.printStackTrace();

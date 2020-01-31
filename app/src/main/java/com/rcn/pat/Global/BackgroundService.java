@@ -7,10 +7,12 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -78,6 +80,27 @@ public class BackgroundService extends Service {
         return binder;
     }
 
+
+    @RequiresApi(api = VERSION_CODES.O)
+    private void startMyOwnForeground(){
+        String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
+        String channelName = "My Background Service";
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
+
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
+        Notification notification = notificationBuilder.setOngoing(true)
+                .setSmallIcon(R.drawable.icon)
+                .setContentTitle("App is running in background")
+                .setPriority(NotificationManager.IMPORTANCE_MIN)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .build();
+        startForeground(2, notification);
+    }
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
@@ -85,19 +108,7 @@ public class BackgroundService extends Service {
         locationRepository = new LocationRepository(getApplicationContext());
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
-            Notification.Builder builder = new Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
-                    .setContentTitle(getString(R.string.app_name))
-                    .setVisibility(Notification.VISIBILITY_PUBLIC)
-                    .setChannelId(NOTIFICATION_CHANNEL_ID)
-                    .setContentText("PAT Está en ejecución")
-                    .setOnlyAlertOnce(true)
-                    .setPriority(Notification.PRIORITY_HIGH)
-                    .setCategory(Notification.CATEGORY_SERVICE)
-                    .setAutoCancel(true);
-
-            Notification notification = builder.build();
-            startForeground(2, notification);
+            startMyOwnForeground();
 
         } else {
 
