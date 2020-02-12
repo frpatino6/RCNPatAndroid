@@ -88,7 +88,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Usuario"
-            android:text="frodriguezp"
+            android:text=""
             android:textSize="24sp"
             android:textStyle="normal" />
     </com.google.android.material.textfield.TextInputLayout>
@@ -112,7 +112,7 @@
             android:hint="Contraseña"
             android:textSize="24sp"
             android:inputType="textPassword"
-            android:text="bogota1*"
+            android:text=""
             android:textStyle="normal" />
     </com.google.android.material.textfield.TextInputLayout>
 
