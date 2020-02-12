@@ -111,7 +111,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         recyclerView.setHasFixedSize(true);
 
 
-        layoutManager = new LinearLayoutManager(ListDriverServicesActivity.this);
+            layoutManager = new LinearLayoutManager(ListDriverServicesActivity.this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
         asyncListProductions();

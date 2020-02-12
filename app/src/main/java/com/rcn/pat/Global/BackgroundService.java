@@ -24,6 +24,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.R;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
 public class BackgroundService extends Service {
     private static final String TAG = "BackgroundService";
     private static final String NOTIFICATION_CHANNEL_ID = "channel_01";
@@ -31,7 +35,7 @@ public class BackgroundService extends Service {
     public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
     public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
     private final int LOCATION_INTERVAL = 500;
-    private final int LOCATION_DISTANCE = 10;
+    private final int LOCATION_DISTANCE = 1;
     private Intent _intent;
     private LocalBroadcastManager localBroadcastManager;
     private LocationRepository locationRepository;
@@ -168,6 +172,7 @@ public class BackgroundService extends Service {
                 MyLocation loc = new MyLocation();
                 loc.setLatitude(location.getLatitude());
                 loc.setLongitude(location.getLongitude());
+                loc.setTimeRead(gettime());
                 locationRepository.insertLocation(loc);
 
                 if (_onLocationChange != null)
@@ -191,7 +196,17 @@ public class BackgroundService extends Service {
             Log.e(TAG, "onStatusChanged: " + status);
         }
     }
+    private String gettime() {
+        SimpleDateFormat sdf = null;
+        try {
+            sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return sdf.format(new Date());
+    }
     public class LocationServiceBinder extends Binder {
         public BackgroundService getService() {
             return BackgroundService.this;

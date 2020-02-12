@@ -15,6 +15,7 @@ public class GlobalClass extends Application {
     private String docNumber;
     private ServiceInfo currentService;
     private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
+    //private String urlServices = "http://190.24.154.3/API_Transportes/api/";
 
     public int getMinSendLocationToDatabase() {
         return minSendLocationToDatabase;

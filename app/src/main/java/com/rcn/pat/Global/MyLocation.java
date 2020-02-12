@@ -5,12 +5,21 @@ import androidx.room.PrimaryKey;
 
 @Entity
 public class MyLocation {
+    private String address;
     @PrimaryKey(autoGenerate = true)
     private int id;
     private double latitude;
     private double longitude;
-    private String address;
     private long time;
+    private String timeRead;
+
+    public String getTimeRead() {
+        return timeRead;
+    }
+
+    public void setTimeRead(String timeRead) {
+        this.timeRead = timeRead;
+    }
 
     public int getId() {
         return id;

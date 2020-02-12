@@ -2,6 +2,7 @@ package com.rcn.pat.Activities;
 
 import android.Manifest;
 import android.app.ActivityManager;
+import android.app.ActivityManager.RunningServiceInfo;
 import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.app.ProgressDialog;
@@ -90,13 +91,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String name = className.getClassName();
             if (name.endsWith("BackgroundService")) {
                 gpsService = ((BackgroundService.LocationServiceBinder) service).getService();
+                if (currentServiceInfo != null) {
+                    GlobalClass.getInstance().setCurrentService(currentServiceInfo);
+                    toggleButtons();
 
+                    if(GlobalClass.getInstance().getCurrentService().isStarted())
+                    {
+                        startTracking();
+                    }
+                }
 
             }
         }
 
         public void onServiceDisconnected(ComponentName className) {
             if (className.getClassName().equals("BackgroundService")) {
+                stopTracking();
                 gpsService = null;
             }
         }
@@ -422,8 +432,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void startTracking() {
-
-
         Dexter.withActivity(this)
                 .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(new PermissionListener() {
@@ -454,11 +462,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         token.continuePermissionRequest();
                     }
                 }).check();
-
-
         //Inicia servicio que se ejecuta cada X tiempo para enviar al backEnd la traza leida hasta el momento
         if (!isMyServiceRunning(mSensorService.getClass())) {
             startService(mServiceIntent);
+
         }
 
 
@@ -468,7 +475,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
-        this.getApplication().stopService(intent);
+        stopService(intent);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancelAll();
 
@@ -477,6 +484,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void stopTracking() {
         mTracking = false;
         //
+        GlobalClass.getInstance().getCurrentService().setStarted(false);
         stopService(mServiceIntent);
         toggleButtons();
         stopBackgroundServices();
@@ -607,12 +615,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         protected void onPostExecute(Object o) {
 
-            if (currentServiceInfo != null) {
-                GlobalClass.getInstance().setCurrentService(currentServiceInfo);
-                toggleButtons();
-                //startTracking();
 
-            }
+
+
             super.onPostExecute(o);
         }
 
@@ -622,5 +627,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         }
     }
+
+
+    /**
+     * Check if the service is Running
+     *
+     * @param serviceClass the class of the Service
+     * @return true if the service is running otherwise false
+     */
+    public boolean checkServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        for (RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 }
