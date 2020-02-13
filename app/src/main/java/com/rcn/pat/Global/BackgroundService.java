@@ -87,8 +87,8 @@ public class BackgroundService extends Service {
 
     @RequiresApi(api = VERSION_CODES.O)
     private void startMyOwnForeground(){
-        String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
-        String channelName = "My Background Service";
+        String NOTIFICATION_CHANNEL_ID = " com.rcn.pat";
+        String channelName = "Pat Background Service";
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
         chan.setLightColor(Color.BLUE);
         chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
@@ -99,7 +99,8 @@ public class BackgroundService extends Service {
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
         Notification notification = notificationBuilder.setOngoing(true)
                 .setSmallIcon(R.drawable.icon)
-                .setContentTitle("App is running in background")
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText("PAT Está en ejecución")
                 .setPriority(NotificationManager.IMPORTANCE_MIN)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();

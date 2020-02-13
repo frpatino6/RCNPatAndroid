@@ -29,6 +29,7 @@ import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
+import com.rcn.pat.BuildConfig;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.R;
 import com.rcn.pat.ViewModels.LoginViewModel;
@@ -54,6 +55,15 @@ public class LoginActivity extends AppCompatActivity {
         txtUserName = findViewById(R.id.txtUserName);
         txtPws = findViewById(R.id.txtPws);
         btnLogin = findViewById(R.id.btnLogin);
+        if (BuildConfig.DEBUG) {
+            txtUserName.setText("frodriguezp");
+            txtPws.setText("bogota1*");
+        }
+        else{
+            txtUserName.setText("frodriguezp");
+            txtPws.setText("bogota1*");
+        }
+
     }
 
     private void InitializaEvents() {
@@ -223,6 +233,7 @@ public class LoginActivity extends AppCompatActivity {
         getSupportActionBar().hide();
 
         InitializaControls();
+
         InitializaEvents();
 
         FirebaseMessaging.getInstance().setAutoInitEnabled(true);

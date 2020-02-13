@@ -39,6 +39,8 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class SyncDataService extends Service {
 
+
+    private NotificationManager manager;
     public static final String TAG = SyncDataService.class.getSimpleName();
     public static final String SERVICE_RESULT = "com.service.resultSyncDataService";
     public static final String SERVICE_MESSAGE = "com.service.messageSyncDataService";
@@ -179,20 +181,21 @@ public class SyncDataService extends Service {
     }
 
     @RequiresApi(api = VERSION_CODES.O)
-    private void startMyOwnForeground(){
-        String NOTIFICATION_CHANNEL_ID = "com.example.simpleapp";
-        String channelName = "My Background Service";
+    private void startMyOwnForeground() {
+        String NOTIFICATION_CHANNEL_ID = "com.rcn.pat";
+        String channelName = "Pat Background Service";
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
         chan.setLightColor(Color.BLUE);
         chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         assert manager != null;
         manager.createNotificationChannel(chan);
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
         Notification notification = notificationBuilder.setOngoing(true)
                 .setSmallIcon(R.drawable.icon)
-                .setContentTitle("App is running in background")
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText("PAT Está en ejecución")
                 .setPriority(NotificationManager.IMPORTANCE_MIN)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
@@ -230,6 +233,10 @@ public class SyncDataService extends Service {
         Intent broadcastIntent = new Intent("uk.ac.shef.oak.ActivityRecognition.RestartSensor");
         sendBroadcast(broadcastIntent);
         stoptimertask();
+        stopForeground(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            manager.deleteNotificationChannel("Pat Background Service");
+        }
     }
 
     @Override

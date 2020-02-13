@@ -393,11 +393,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void startBackgroundServices() {
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
-        // this.getApplication().startService(intent);
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             this.getApplication().startForegroundService(intent);
         else
             this.getApplication().startService(intent);
+
+        final Intent intentSync = new Intent(this.getApplication(), SyncDataService.class);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+            this.getApplication().startForegroundService(intentSync);
+        else
+            this.getApplication().startService(intentSync);
+
 
         this.getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
         mSensorService = new SyncDataService(getCtx());
@@ -475,7 +483,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(broadcastReceiverBackgroundService);
         final Intent intent = new Intent(this.getApplication(), BackgroundService.class);
+        final Intent intentSync = new Intent(this.getApplication(), SyncDataService.class);
         stopService(intent);
+        stopService(intentSync);
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancelAll();
 
