@@ -558,7 +558,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             initializaValues();
             initializaEvents();
             ctx = this;
-            startBackgroundServices();
+            //startBackgroundServices();
             new asyncGetServiceById().execute();
         } catch (Exception e) {
             e.printStackTrace();

@@ -246,6 +246,7 @@ public class SyncDataService extends Service {
         return START_STICKY;
     }
 
+
     public class LocalBinder extends Binder {
         SyncDataService getService() {
             return SyncDataService.this;
