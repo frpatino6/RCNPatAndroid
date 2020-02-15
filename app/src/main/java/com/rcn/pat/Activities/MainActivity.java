@@ -91,26 +91,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 gpsService = ((BackgroundService.LocationServiceBinder) service).getService();
                 if (GlobalClass.getInstance().getCurrentService().isStarted()) {
                     if (!mTracking) {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            //if(!isMyServiceRunning(BackgroundService.class)) {
-                                gpsService.startForegroundService(intent);
-                                gpsService.startForegroundService(mServiceIntent);
-                            //}
-                        } else {
-                            //if(!isMyServiceRunning(BackgroundService.class)) {
-                                gpsService.startService(intent);
-                                gpsService.startService(mServiceIntent);
-                            //}
-                        }
+                        startForegroundServices();
                         gpsService.startTracking();
                         mTracking = true;
+                    } else if (mTracking && (!isMyServiceRunning(BackgroundService.class)) || (!isMyServiceRunning(SyncDataService.class))) {
+                        startForegroundServices();
+                        gpsService.startTracking();
                     }
-
                 }
                 toggleButtons();
 
             }
         }
+
         @Override
         public void onServiceDisconnected(ComponentName className) {
             if (className.getClassName().equals("BackgroundService")) {
@@ -119,6 +112,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     };
+
+    private void startForegroundServices() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            //if(!isMyServiceRunning(BackgroundService.class)) {
+            gpsService.startForegroundService(intent);
+            gpsService.startForegroundService(mServiceIntent);
+            //}
+        } else {
+            //if(!isMyServiceRunning(BackgroundService.class)) {
+            gpsService.startService(intent);
+            gpsService.startService(mServiceIntent);
+            //}
+        }
+    }
+
     private ServiceRepository serviceRepository;
     private Button startButton;
     private TextView statusTextView;
@@ -626,7 +634,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             startBackgroundServices();
 
             if (GlobalClass.getInstance().getCurrentService().isStarted()) {
-                mTracking =true;
+                mTracking = true;
                 startTracking();
             }
             toggleButtons();
