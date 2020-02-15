@@ -32,7 +32,7 @@
             android:exported="true" />
 
         <receiver
-            android:name=".Global.Alarm"
+            android:name=".Global.BackgroundService"
             android:enabled="true"
             android:label="RestartServiceWhenStopped"
             android:exported="true">

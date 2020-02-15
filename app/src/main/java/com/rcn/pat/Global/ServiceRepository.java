@@ -27,7 +27,7 @@ public class ServiceRepository {
             @Override
             protected Void doInBackground(Void... voids) {
                 myDataBase.servicesDao().insertServiceInfo(serviceInfo);
-                List<ServiceInfo> data = getService();
+                ServiceInfo data = getService(serviceInfo.getId());
                 return null;
             }
         }.execute();

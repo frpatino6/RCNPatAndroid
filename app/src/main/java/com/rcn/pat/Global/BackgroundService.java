@@ -3,7 +3,6 @@ package com.rcn.pat.Global;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -21,7 +20,6 @@ import androidx.annotation.RequiresApi;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.R;
 
 import java.text.SimpleDateFormat;
@@ -57,12 +55,14 @@ public class BackgroundService extends Service {
 
     public void startTracking() {
         initializeLocationManager();
-        mLocationListener = new LocationListener(LocationManager.GPS_PROVIDER, new onLocationChange() {
-            @Override
-            public void onChange(Float speed) {
-                sendResult(String.valueOf(speed));
-            }
-        });
+
+        if (mLocationListener == null)
+            mLocationListener = new LocationListener(LocationManager.GPS_PROVIDER, new onLocationChange() {
+                @Override
+                public void onChange(Float speed) {
+                    sendResult(String.valueOf(speed));
+                }
+            });
 
         try {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE, mLocationListener);
@@ -86,7 +86,7 @@ public class BackgroundService extends Service {
 
 
     @RequiresApi(api = VERSION_CODES.O)
-    private void startMyOwnForeground(){
+    private void startMyOwnForeground() {
         String NOTIFICATION_CHANNEL_ID = " com.rcn.pat";
         String channelName = "Pat Background Service";
         NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
@@ -106,6 +106,7 @@ public class BackgroundService extends Service {
                 .build();
         startForeground(2, notification);
     }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onCreate() {
@@ -127,7 +128,7 @@ public class BackgroundService extends Service {
 
             startForeground(1, notification);
         }
-        stopSelf();
+
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
 
     }
@@ -140,17 +141,21 @@ public class BackgroundService extends Service {
             try {
                 mLocationManager.removeUpdates(mLocationListener);
                 locationRepository = null;
+                mLocationManager = null;
+                mLocationListener = null;
+                _intent = null;
             } catch (Exception ex) {
                 Log.i(TAG, "fail to remove location listeners, ignore", ex);
             }
         }
     }
 
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         _intent = intent;
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     private class LocationListener implements android.location.LocationListener {
@@ -197,6 +202,7 @@ public class BackgroundService extends Service {
             Log.e(TAG, "onStatusChanged: " + status);
         }
     }
+
     private String gettime() {
         SimpleDateFormat sdf = null;
         try {
@@ -208,6 +214,7 @@ public class BackgroundService extends Service {
 
         return sdf.format(new Date());
     }
+
     public class LocationServiceBinder extends Binder {
         public BackgroundService getService() {
             return BackgroundService.this;
