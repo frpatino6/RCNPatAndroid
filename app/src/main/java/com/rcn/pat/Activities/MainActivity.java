@@ -43,6 +43,7 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.BuildConfig;
+import com.rcn.pat.Global.BackgroundLocationUpdateService;
 import com.rcn.pat.Global.BackgroundService;
 import com.rcn.pat.Global.CustomListViewDialog;
 import com.rcn.pat.Global.DataAdapter;
@@ -114,17 +115,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     };
 
     private void startForegroundServices() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            //if(!isMyServiceRunning(BackgroundService.class)) {
-            gpsService.startForegroundService(intent);
-            gpsService.startForegroundService(mServiceIntent);
-            //}
-        } else {
-            //if(!isMyServiceRunning(BackgroundService.class)) {
-            gpsService.startService(intent);
-            gpsService.startService(mServiceIntent);
-            //}
-        }
+
+        if (!isMyServiceRunning(BackgroundLocationUpdateService.class))
+            startService(new Intent(MainActivity.this, BackgroundLocationUpdateService.class));
+
+    }
+
+    private void stopForegroundServices() {
+
+        stopService(new Intent(this, BackgroundLocationUpdateService.class));
+
     }
 
     private ServiceRepository serviceRepository;
@@ -429,7 +429,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onPermissionGranted(PermissionGrantedResponse response) {
 
-                        intent = new Intent(MainActivity.this, BackgroundService.class);
+                        //intent = new Intent(MainActivity.this, BackgroundService.class);
 
                         if (GlobalClass.getInstance().getCurrentService().getIdService() > 0)
                             serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
@@ -439,7 +439,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         GlobalClass.getInstance().getCurrentService().setPaused(false);
                         GlobalClass.getInstance().getCurrentService().setStarted(true);
                         GlobalClass.getInstance().getCurrentService().setStoped(false);
-                        getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+                        // getApplication().bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+                        startForegroundServices();
+                        toggleButtons();
+
                     }
 
                     @Override
@@ -457,9 +460,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             LocalBroadcastManager.getInstance(this.getApplication()).unregisterReceiver(broadcastReceiver);
             LocalBroadcastManager.getInstance(this.getApplication()).unregisterReceiver(broadcastReceiverBackgroundService);
 
-            this.getApplicationContext().unbindService(serviceConnection);
-            gpsService.stopService(intent);
-            gpsService.stopService(mServiceIntent);
+            stopForegroundServices();
+            toggleButtons();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -469,11 +471,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void stopTracking() {
         mTracking = false;
-        gpsService.stopTracking();
+
         GlobalClass.getInstance().getCurrentService().setStarted(false);
         serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
         stopBackgroundServices();
-        toggleButtons();
     }
 
     private void toggleButtons() {
@@ -541,8 +542,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onReceive(Context context, Intent intent) {
                     String speed = intent.getStringExtra(BackgroundService.SERVICE_MESSAGE);
 
-                    if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().getCurrentService().isPaused())
-                        startTracking();
+                    try {
+                        if (!speed.equals("")) {
+                            if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().getCurrentService().isPaused())
+                                startTracking();
+                        } else {
+                            Intent i = new
+                                    Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                            startActivity(i);
+                        }
+                    } catch (NumberFormatException e) {
+                        e.printStackTrace();
+                    }
                 }
             };
 
@@ -554,7 +565,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     asyncServiceInfoById();
                 }
             };
-
 
             new asyncGetServiceById().execute();
         } catch (Exception e) {

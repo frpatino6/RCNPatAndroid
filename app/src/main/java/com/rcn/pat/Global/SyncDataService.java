@@ -37,6 +37,7 @@ import java.util.TimerTask;
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
+@Deprecated
 public class SyncDataService extends Service {
 
 

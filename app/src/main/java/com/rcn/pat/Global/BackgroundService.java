@@ -26,7 +26,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+
+@Deprecated
 public class BackgroundService extends Service {
+    private onLocationDisabled _onLocationDisabled;
     private static final String TAG = "BackgroundService";
     private static final String NOTIFICATION_CHANNEL_ID = "channel_01";
     private final LocationServiceBinder binder = new LocationServiceBinder();
@@ -53,6 +56,12 @@ public class BackgroundService extends Service {
         localBroadcastManager.sendBroadcast(intent);
     }
 
+    private void sendError() {
+        Intent intent = new Intent(SERVICE_RESULT);
+
+        localBroadcastManager.sendBroadcast(intent);
+    }
+
     public void startTracking() {
         initializeLocationManager();
 
@@ -61,6 +70,11 @@ public class BackgroundService extends Service {
                 @Override
                 public void onChange(Float speed) {
                     sendResult(String.valueOf(speed));
+                }
+            }, new onLocationDisabled() {
+                @Override
+                public void onDisabled() {
+                    sendError();
                 }
             });
 
@@ -164,9 +178,11 @@ public class BackgroundService extends Service {
         private Location lastLocation = null;
         private Location mLastLocation;
 
-        public LocationListener(String provider, onLocationChange onLocationChange) {
+        public LocationListener(String provider, onLocationChange onLocationChange, onLocationDisabled onLocationDisabled) {
             mLastLocation = new Location(provider);
             _onLocationChange = onLocationChange;
+            _onLocationDisabled = onLocationDisabled;
+
         }
 
         @Override
@@ -190,6 +206,12 @@ public class BackgroundService extends Service {
         @Override
         public void onProviderDisabled(String provider) {
             Log.e(TAG, "onProviderDisabled: " + provider);
+            if (provider.equals("gps")) {
+                if (_onLocationDisabled != null) {
+                    _onLocationDisabled.onDisabled();
+                }
+            }
+
         }
 
         @Override
