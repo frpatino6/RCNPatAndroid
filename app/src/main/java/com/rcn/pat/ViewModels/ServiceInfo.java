@@ -81,7 +81,7 @@ public class ServiceInfo {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        return str;
+        return FechaFinal;
     }
 
     public void setFechaFinal(String FechaFinal) {

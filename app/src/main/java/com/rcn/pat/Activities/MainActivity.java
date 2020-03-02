@@ -567,7 +567,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     try {
                         endTime =currentServiceInfo.getFechaFinal();
                         Date dateEndService = new SimpleDateFormat("HH-mm").parse(endTime);
-                        if(dateEndService.getHours()< res.hour){
+                        if(dateEndService.getHours()> res.hour){
                             sendNotificationEndService(); //Envia notificaci[on, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
                         }
                     } catch (ParseException e) {
