@@ -561,10 +561,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
                     Time res = GlobalClass.getInstance().getCurrentTime();
                     int id = GlobalClass.getInstance().getCurrentService().getId();
+                    String endTime ="";
                     if (currentServiceInfo == null)
                         currentServiceInfo = serviceRepository.getStartetService();
                     try {
-                        Date dateEndService = new SimpleDateFormat("HH-mm").parse(currentServiceInfo.getFechaFinal());
+                        endTime =currentServiceInfo.getFechaFinal();
+                        Date dateEndService = new SimpleDateFormat("HH-mm").parse(endTime);
                         if(dateEndService.getHours()< res.hour){
                             sendNotificationEndService(); //Envia notificaci[on, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
                         }
