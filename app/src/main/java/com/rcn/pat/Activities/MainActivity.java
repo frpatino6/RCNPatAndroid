@@ -618,10 +618,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int timeDif = dateEndService.compareTo(res);
             int timeDifTest = res.compareTo(dateEndService);
 
-            if (dateEndService.compareTo(res) == timeDif) {
+            if (timeDif == -1) {
                 sendNotificationEndService(); //Envia notificación, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
             }
         } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        catch (Exception e){
             e.printStackTrace();
         }
     }
