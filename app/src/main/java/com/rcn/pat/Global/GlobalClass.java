@@ -64,10 +64,11 @@ public class GlobalClass extends Application {
         this.currentService = currentService;
     }
 
-    public Time getCurrentTime() {
-        Time now = new Time();
-        now.setToNow();
-        return now;
+    public Date getCurrentTime() {
+        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Date date = new Date();
+
+        return date;
     }
     @Override
     public void onCreate() {

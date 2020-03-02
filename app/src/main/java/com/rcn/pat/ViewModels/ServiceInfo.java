@@ -77,6 +77,7 @@ public class ServiceInfo {
             if (FechaFinal != null) {
                 date = inputFormat.parse(FechaFinal);
                 str = outputFormat.format(date);
+                return str;
             }
         } catch (ParseException e) {
             e.printStackTrace();

@@ -606,15 +606,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void ValidateIfEndedService() {
-        Time res = GlobalClass.getInstance().getCurrentTime();
+        Date res = GlobalClass.getInstance().getCurrentTime();
         int id = GlobalClass.getInstance().getCurrentService().getId();
         String endTime = "";
         if (currentServiceInfo == null)
             currentServiceInfo = serviceRepository.getStartetService();
         try {
             endTime = currentServiceInfo.getFechaFinal();
-            Date dateEndService = new SimpleDateFormat("HH-mm").parse(endTime);
-            if (dateEndService.getHours() < res.hour) {
+            Date dateEndService = new SimpleDateFormat("HH:mm").parse(endTime);
+            int timeDif = dateEndService.compareTo(res);
+            if (dateEndService.compareTo(res) == timeDif) {
                 sendNotificationEndService(); //Envia notificación, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
             }
         } catch (ParseException e) {
@@ -651,6 +652,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setSmallIcon(R.drawable.icon);
         builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
+
+        notificationManager.notify(0, builder.getNotification());
     }
 
     @Override
