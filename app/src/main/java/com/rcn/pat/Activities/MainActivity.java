@@ -614,7 +614,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             endTime = currentServiceInfo.getFechaFinal();
             Date dateEndService = new SimpleDateFormat("HH:mm").parse(endTime);
+
             int timeDif = dateEndService.compareTo(res);
+            int timeDifTest = res.compareTo(dateEndService);
+
             if (dateEndService.compareTo(res) == timeDif) {
                 sendNotificationEndService(); //Envia notificación, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
             }
