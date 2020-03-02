@@ -3,6 +3,10 @@ package com.rcn.pat.Activities;
 import android.Manifest;
 import android.app.ActivityManager;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -12,6 +16,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.graphics.Typeface;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -28,6 +33,7 @@ import android.widget.TextView;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.gson.Gson;
@@ -558,23 +564,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             broadcastReceiverBackgroundService = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
-                    Time res = GlobalClass.getInstance().getCurrentTime();
-                    int id = GlobalClass.getInstance().getCurrentService().getId();
-                    String endTime ="";
-                    if (currentServiceInfo == null)
-                        currentServiceInfo = serviceRepository.getStartetService();
-                    try {
-                        endTime =currentServiceInfo.getFechaFinal();
-                        Date dateEndService = new SimpleDateFormat("HH-mm").parse(endTime);
-                        if(dateEndService.getHours()> res.hour){
-                            sendNotificationEndService(); //Envia notificaci[on, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
-                        }
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
+                    //Valida si la hora actual sobrepasa la hora estimada de finalización del servicio, si es así, envia una notificación
+                    // Preguntando al usuario, si desea finalizar el servicio, ya que la hora ha sido superada
+                    ValidateIfEndedService();
 
                     try {
+                        String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
+
+                        //Si la velocidad es superior a 5 kms/h inicia automaticamente el servicio.
                         if (!speed.equals("")) {
                             if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().getCurrentService().isPaused())
                                 startTracking();
@@ -608,8 +605,52 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private void sendNotificationEndService() {
+    private void ValidateIfEndedService() {
+        Time res = GlobalClass.getInstance().getCurrentTime();
+        int id = GlobalClass.getInstance().getCurrentService().getId();
+        String endTime = "";
+        if (currentServiceInfo == null)
+            currentServiceInfo = serviceRepository.getStartetService();
+        try {
+            endTime = currentServiceInfo.getFechaFinal();
+            Date dateEndService = new SimpleDateFormat("HH-mm").parse(endTime);
+            if (dateEndService.getHours() < res.hour) {
+                sendNotificationEndService(); //Envia notificación, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
+            }
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+    }
 
+    private void sendNotificationEndService() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent, PendingIntent.FLAG_ONE_SHOT);
+
+        String CHANNEL_ID = "channel_location";
+        String CHANNEL_NAME = "channel_location";
+
+        NotificationCompat.Builder builder = null;
+        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+            notificationManager.createNotificationChannel(channel);
+            builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);
+            builder.setChannelId(CHANNEL_ID);
+            builder.setBadgeIconType(NotificationCompat.BADGE_ICON_NONE);
+        } else {
+            builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);
+        }
+
+        builder.setContentText("El servicio a superado la hora estimada de finalización");
+        builder.setContentTitle(getString(R.string.app_name));
+        Uri notificationSound = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION);
+        builder.setSound(notificationSound);
+        builder.setAutoCancel(true);
+        builder.setSmallIcon(R.drawable.icon);
+        builder.setContentIntent(pendingIntent);
+        Notification notification = builder.build();
     }
 
     @Override
