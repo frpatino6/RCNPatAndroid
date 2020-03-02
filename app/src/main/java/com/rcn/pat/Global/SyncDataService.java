@@ -118,17 +118,7 @@ public class SyncDataService extends Service {
         });
     }
 
-    private String gettime() {
-        SimpleDateFormat sdf = null;
-        try {
-            sdf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.getDefault());
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return sdf.format(new Date());
-    }
 
     /**
      * it sets the timer to print the counter every x seconds

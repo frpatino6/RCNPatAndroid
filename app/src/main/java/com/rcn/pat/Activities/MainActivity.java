@@ -18,6 +18,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
+import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -55,7 +56,10 @@ import com.rcn.pat.R;
 import com.rcn.pat.ViewModels.PausaReasons;
 import com.rcn.pat.ViewModels.ServiceInfo;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
@@ -555,6 +559,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
+                    Time res = GlobalClass.getInstance().getCurrentTime();
+                    int id = GlobalClass.getInstance().getCurrentService().getId();
+                    if (currentServiceInfo == null)
+                        currentServiceInfo = serviceRepository.getStartetService();
+                    try {
+                        Date dateEndService = new SimpleDateFormat("HH-mm").parse(currentServiceInfo.getFechaFinal());
+                        if(dateEndService.getHours()< res.hour){
+                            sendNotificationEndService(); //Envia notificaci[on, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
+                        }
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
 
                     try {
                         if (!speed.equals("")) {
@@ -587,6 +603,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+    }
+
+    private void sendNotificationEndService() {
 
     }
 
@@ -687,8 +707,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 toggleButtons();
                 activeAllButtons();
             }
-        }
-        else{
+        } else {
             toggleButtons();
             activeAllButtons();
         }

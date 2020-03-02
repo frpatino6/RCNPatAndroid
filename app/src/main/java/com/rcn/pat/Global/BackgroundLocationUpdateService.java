@@ -106,9 +106,6 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
             @Override
             public void run() {
                 try {
-                    if (!stopService) {
-
-                    }
 
                 } catch (Exception e) {
                     e.printStackTrace();

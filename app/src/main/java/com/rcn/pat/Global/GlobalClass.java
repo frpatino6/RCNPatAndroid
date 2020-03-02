@@ -4,10 +4,14 @@ import android.app.Application;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.text.format.Time;
 
 import com.rcn.pat.ViewModels.ServiceInfo;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 
 public class GlobalClass extends Application {
@@ -60,7 +64,11 @@ public class GlobalClass extends Application {
         this.currentService = currentService;
     }
 
-
+    public Time getCurrentTime() {
+        Time now = new Time();
+        now.setToNow();
+        return now;
+    }
     @Override
     public void onCreate() {
         super.onCreate();
