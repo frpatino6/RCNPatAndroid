@@ -92,7 +92,7 @@ public class LoginActivity extends AppCompatActivity {
         String url = GlobalClass.getInstance().getUrlServices() + "login?UserName=" + username + "&Password=" + pws + "&Token=" + deviceToken + "&Plataforma=android";
 
         AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(10000);
+        client.setTimeout(60000);
         String tipo = "application/json";
         RequestParams params = new RequestParams();
         entity = new StringEntity("", StandardCharsets.UTF_8);

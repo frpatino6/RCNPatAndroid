@@ -4,7 +4,6 @@ package com.rcn.pat.Global;
 import android.content.Context;
 import android.os.AsyncTask;
 
-import androidx.lifecycle.LiveData;
 import androidx.room.Room;
 
 import com.rcn.pat.ViewModels.ServiceInfo;
@@ -18,6 +17,7 @@ public class ServiceRepository {
     public ServiceRepository(Context context) {
         myDataBase = Room.databaseBuilder(context, MyDataBase.class, DB_NAME)
                 .fallbackToDestructiveMigration()
+                .allowMainThreadQueries()
                 .build();
     }
 
@@ -60,13 +60,13 @@ public class ServiceRepository {
     public void deleteAllService() {
 
 
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... voids) {
-                    myDataBase.servicesDao().deleteAllServiceInfo();
-                    return null;
-                }
-            }.execute();
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                myDataBase.servicesDao().deleteAllServiceInfo();
+                return null;
+            }
+        }.execute();
 
     }
 
@@ -75,10 +75,15 @@ public class ServiceRepository {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... voids) {
-                myDataBase.servicesDao().deleteServiceInfo(ServiceInfo);
+                if (ServiceInfo != null)
+                    myDataBase.servicesDao().deleteServiceInfo(ServiceInfo);
                 return null;
             }
         }.execute();
+    }
+
+    public ServiceInfo getStartetService() {
+        return myDataBase.servicesDao().getStartetService();
     }
 
     public ServiceInfo getService(int id) {

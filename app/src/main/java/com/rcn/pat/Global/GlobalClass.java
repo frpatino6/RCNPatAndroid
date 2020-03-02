@@ -7,6 +7,8 @@ import android.net.NetworkInfo;
 
 import com.rcn.pat.ViewModels.ServiceInfo;
 
+import java.util.ArrayList;
+
 
 public class GlobalClass extends Application {
     private static GlobalClass instance;
@@ -14,6 +16,7 @@ public class GlobalClass extends Application {
     private int minSendLocationToDatabase= 20; //Intervalo en minutos para enviar los datos de localización al backend
     private String docNumber;
     private ServiceInfo currentService;
+    private ArrayList<ServiceInfo>listServicesDriver;
     private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
     //private String urlServices = "http://190.24.154.3/API_Transportes/api/";
 
@@ -21,6 +24,13 @@ public class GlobalClass extends Application {
         return minSendLocationToDatabase;
     }
 
+    public ArrayList<ServiceInfo> getListServicesDriver() {
+        return listServicesDriver;
+    }
+
+    public void setListServicesDriver(ArrayList<ServiceInfo> listServicesDriver) {
+        this.listServicesDriver = listServicesDriver;
+    }
 
     public static GlobalClass getInstance() {
         return instance;
