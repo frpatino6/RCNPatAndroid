@@ -281,11 +281,15 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             public void run() {
                 locationRepository = new LocationRepository(getApplicationContext());
-                result = locationRepository.getLocations();
+                try {
+                    result = locationRepository.getLocations();
 
-                if (GlobalClass.getInstance().isNetworkAvailable())
-                    if (result != null && result.size() > 0)
-                        asyncLocations();
+                    if (GlobalClass.getInstance().isNetworkAvailable())
+                        if (result != null && result.size() > 0)
+                            asyncLocations();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         };
     }
@@ -395,6 +399,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 Log.i(TAG, "Sended locations " + result.size());
+                locationRepository.deleteAllLocation();
             }
         });
     }

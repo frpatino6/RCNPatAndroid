@@ -69,8 +69,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BroadcastReceiver broadcastReceiverBackgroundService;
     private BroadcastReceiver broadcastReceiverFirebase;
     private TextView btnPause;
+    private TextView lblPause;
     private TextView btnStart;
+    private TextView lblStart;
     private TextView btnStop;
+    private TextView lblStop;
     private Context ctx;
     private ServiceInfo currentServiceInfo;
     private CustomListViewDialog customDialog;
@@ -324,6 +327,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnPause = (TextView) findViewById(R.id.btnPause);
         btnStart = (TextView) findViewById(R.id.btnStart);
         btnStop = (TextView) findViewById(R.id.btnStop);
+        lblPause = (TextView) findViewById(R.id.lblPause);
+        lblStart = (TextView) findViewById(R.id.lblStart);
+        lblStop = (TextView) findViewById(R.id.lblStop);
+
         fontTextView2 = (TextView) findViewById(R.id.fontTextView2);
 
         btnPause.setTypeface(typeface);
@@ -474,7 +481,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         GlobalClass.getInstance().getCurrentService().setStarted(false);
         serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+        serviceRepository.deleteAllService();
         stopBackgroundServices();
+        finish();
+
     }
 
     private void toggleButtons() {
@@ -503,6 +513,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             statusTextView.setText((mTracking) ? "TRACKING" : "GPS Ready");
         }
+        lblStop.setVisibility(btnStop.getVisibility());
+        lblPause.setVisibility(btnPause.getVisibility());
+        lblStart.setVisibility(btnStart.getVisibility());
+
     }
 
     @Override
@@ -540,7 +554,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             broadcastReceiverBackgroundService = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    String speed = intent.getStringExtra(BackgroundService.SERVICE_MESSAGE);
+                    String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
 
                     try {
                         if (!speed.equals("")) {
@@ -551,6 +565,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                             startActivity(i);
                         }
+                        //Valida si el servicio ya terminó y aún está activo
+                        //SI: Notifica al usuario preguntando si desea seguir con el servicio activo
+
                     } catch (NumberFormatException e) {
                         e.printStackTrace();
                     }
@@ -571,7 +588,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             e.printStackTrace();
         }
 
-
     }
 
     @Override
@@ -581,7 +597,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new IntentFilter(SyncDataService.SERVICE_RESULT));
 
         LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
-                new IntentFilter(BackgroundService.SERVICE_RESULT));
+                new IntentFilter(BackgroundLocationUpdateService.SERVICE_RESULT));
 
         LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
                 new IntentFilter(PatFirebaseService.SERVICE_RESULT));
@@ -647,8 +663,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mTracking = true;
                 startTracking();
             }
-            toggleButtons();
-
+            haveStartService();
         }
 
         @Override
@@ -656,5 +671,40 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         }
+    }
+
+    private void haveStartService() {
+        ServiceInfo result = serviceRepository.getStartetService();
+
+        int indexService = GlobalClass.getInstance().getListServicesDriver().indexOf(result);
+
+        if (indexService == -1) {
+            serviceRepository.deleteService(result);
+        } else if (result != null) {
+            if (result.getIdService() != GlobalClass.getInstance().getCurrentService().getIdService())
+                inactiveAllButtons();
+            else {
+                toggleButtons();
+                activeAllButtons();
+            }
+        }
+        else{
+            toggleButtons();
+            activeAllButtons();
+        }
+
+    }
+
+    private void activeAllButtons() {
+        btnPause.setVisibility(View.VISIBLE);
+        btnStart.setVisibility(View.VISIBLE);
+        btnStop.setVisibility(View.VISIBLE);
+        toggleButtons();
+    }
+
+    private void inactiveAllButtons() {
+        btnPause.setVisibility(View.GONE);
+        btnStart.setVisibility(View.GONE);
+        btnStop.setVisibility(View.GONE);
     }
 }

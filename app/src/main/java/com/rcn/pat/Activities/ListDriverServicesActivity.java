@@ -8,6 +8,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -20,8 +22,8 @@ import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.ServiceAdapter;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.R;
-import com.rcn.pat.ViewModels.ServiceInfo;
 import com.rcn.pat.ViewModels.PausaReasons;
+import com.rcn.pat.ViewModels.ServiceInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +38,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private ProgressDialog dialogo;
     private LinearLayoutManager layoutManager;
     private RecyclerView recyclerView;
+    private SwipeRefreshLayout swipeRefreshLayout;
 
     private void asyncListProductions() {
 
@@ -61,7 +64,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                     public void onFinish() {
                         super.onFinish();
                         dialogo.hide();
-
+                        swipeRefreshLayout.setRefreshing(false);
                     }
 
                     @Override
@@ -75,6 +78,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                             Gson gson = new GsonBuilder().create();
                             // Define Response class to correspond to the JSON response returned
                             data = gson.fromJson(res, token.getType());
+                            GlobalClass.getInstance().setListServicesDriver(data);
                             adapter = new ServiceAdapter(data, new onClickVIewDetail() {
                                 @Override
                                 public void onClick(ServiceInfo idServicio) {
@@ -94,7 +98,6 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     }
 
 
-
     private void goDetailService(ServiceInfo idServicio) {
         GlobalClass.getInstance().setCurrentService(idServicio);
         Intent intent = null;
@@ -106,14 +109,19 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list_driver_services);
-
         recyclerView = findViewById(R.id.recyclerView);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         recyclerView.setHasFixedSize(true);
-
-
-            layoutManager = new LinearLayoutManager(ListDriverServicesActivity.this);
+        layoutManager = new LinearLayoutManager(ListDriverServicesActivity.this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+
+        swipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                asyncListProductions();
+            }
+        });
         asyncListProductions();
     }
 }

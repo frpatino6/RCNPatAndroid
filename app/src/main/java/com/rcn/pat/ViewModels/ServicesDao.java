@@ -20,6 +20,9 @@ public interface ServicesDao {
     @Query("SELECT * FROM ServiceInfo WHERE id =:id")
     ServiceInfo getServiceInfo(int id);
 
+    @Query("SELECT * FROM ServiceInfo WHERE isStarted = 1 or isPaused=1 ")
+    ServiceInfo getStartetService();
+
     @Query("SELECT * FROM ServiceInfo")
     List<ServiceInfo> getAllSections();
 
