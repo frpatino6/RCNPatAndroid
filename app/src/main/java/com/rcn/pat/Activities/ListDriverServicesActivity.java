@@ -40,14 +40,16 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
 
-    private void asyncListProductions() {
+    private void asyncListProductions(boolean showProgress) {
 
-        dialogo = new ProgressDialog(ListDriverServicesActivity.this);
-        dialogo.setMessage("Cargando servicios...");
-        dialogo.setIndeterminate(false);
-        dialogo.setCancelable(false);
-        dialogo.show();
 
+        if(showProgress) {
+            dialogo = new ProgressDialog(ListDriverServicesActivity.this);
+            dialogo.setMessage("Cargando servicios...");
+            dialogo.setIndeterminate(false);
+            dialogo.setCancelable(false);
+            dialogo.show();
+        }
         String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver?NoDocumento=" + GlobalClass.getInstance().getDocNumber();
         AsyncHttpClient client = new AsyncHttpClient();
         client.setTimeout(60000);
@@ -119,9 +121,9 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {
-                asyncListProductions();
+                asyncListProductions(false);
             }
         });
-        asyncListProductions();
+        asyncListProductions(true);
     }
 }

@@ -26,10 +26,20 @@ public class ServiceInfo {
     private String Observaciones;
     private String Placa;
     private String SolicitudNombre;
+    private String FechaPausa;
     private boolean isPaused = false;
     private boolean isStarted = false;
     private boolean isStoped = true;
     // Getter Methods
+
+
+    public String getFechaPausa() {
+        return FechaPausa;
+    }
+
+    public void setFechaPausa(String fechaPausa) {
+        this.FechaPausa = fechaPausa;
+    }
 
     public int getIdService() {
         return idService;
@@ -104,13 +114,14 @@ public class ServiceInfo {
             if (FechaInicial != null) {
                 date = inputFormat.parse(FechaInicial);
                 str = outputFormat.format(date);
+                return  str;
             } else {
                 return "";
             }
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        return str;
+        return str == null ? FechaInicial : str;
     }
 
     public void setFechaInicial(String FechaInicial) {

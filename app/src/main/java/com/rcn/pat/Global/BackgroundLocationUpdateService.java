@@ -190,7 +190,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
             @Override
             public void onLocationResult(LocationResult locationResult) {
                 super.onLocationResult(locationResult);
-               // Log.e(TAG_LOCATION, "Location Received");
+                // Log.e(TAG_LOCATION, "Location Received");
                 mCurrentLocation = locationResult.getLastLocation();
                 onLocationChanged(mCurrentLocation);
             }
@@ -207,7 +207,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
 
     @Override
     public void onLocationChanged(Location location) {
-       // Log.e(TAG_LOCATION, "Location Changed Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude());
+        // Log.e(TAG_LOCATION, "Location Changed Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude());
 
         latitude = String.valueOf(location.getLatitude());
         longitude = String.valueOf(location.getLongitude());
@@ -284,6 +284,11 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                     if (GlobalClass.getInstance().isNetworkAvailable())
                         if (result != null && result.size() > 0)
                             asyncLocations();
+                    if (result != null && result.size() == 0) {
+                        Intent intent = new Intent(SERVICE_RESULT);
+                        intent.putExtra(SERVICE_MESSAGE, "0");
+                        localBroadcastManager.sendBroadcast(intent);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

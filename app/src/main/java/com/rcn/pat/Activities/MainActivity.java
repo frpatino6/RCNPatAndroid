@@ -23,7 +23,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.provider.Settings;
-import android.text.format.Time;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -67,6 +66,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import cz.msebera.android.httpclient.Header;
 
@@ -191,12 +191,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     @Override
                                     public void clickOnItem(PausaReasons data) {
                                         customDialog.dismiss();
-                                        GlobalClass.getInstance().getCurrentService().setPaused(true);
-                                        GlobalClass.getInstance().getCurrentService().setStarted(false);
-                                        GlobalClass.getInstance().getCurrentService().setStoped(false);
-                                        serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+
+                                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
+
+                                        pauseService(sdf);
                                         //stopTracking();
-                                        toggleButtons();
+
 
                                     }
                                 });
@@ -215,6 +216,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void pauseService(SimpleDateFormat sdf) {
+        GlobalClass.getInstance().getCurrentService().setPaused(true);
+        GlobalClass.getInstance().getCurrentService().setStarted(false);
+        GlobalClass.getInstance().getCurrentService().setStoped(false);
+        GlobalClass.getInstance().getCurrentService().setFechaPausa(sdf.format(new Date()));
+        ServiceInfo serviceInfo = serviceRepository.getStartetService();
+        serviceInfo.setPaused(true);
+        serviceInfo.setStarted(false);
+        serviceInfo.setStoped(false);
+        serviceInfo.setFechaPausa(sdf.format(new Date()));
+        serviceRepository.updateService(serviceInfo);
+        toggleButtons();
+
     }
 
     private void asyncServiceInfoById() {
@@ -448,9 +464,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                         //intent = new Intent(MainActivity.this, BackgroundService.class);
 
-                        if (GlobalClass.getInstance().getCurrentService().getIdService() > 0)
+                        if (GlobalClass.getInstance().getCurrentService().getIdService() > 0) {
+                            GlobalClass.getInstance().getCurrentService().setFechaPausa("");
                             serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
-                        else
+                        } else
                             serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
 
                         GlobalClass.getInstance().getCurrentService().setPaused(false);
@@ -566,15 +583,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onReceive(Context context, Intent intent) {
                     //Valida si la hora actual sobrepasa la hora estimada de finalización del servicio, si es así, envia una notificación
                     // Preguntando al usuario, si desea finalizar el servicio, ya que la hora ha sido superada
-                    ValidateIfEndedService();
+                    ServiceInfo serviceInfo = serviceRepository.getStartetService();
+                    ValidateIfEndedService(serviceInfo);
 
                     try {
                         String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
 
                         //Si la velocidad es superior a 5 kms/h inicia automaticamente el servicio.
                         if (!speed.equals("")) {
-                            if (Float.valueOf(speed) > 5 && GlobalClass.getInstance().getCurrentService().isPaused())
-                                startTracking();
+                            if (serviceInfo != null)
+                                if (Float.valueOf(speed) > 15 && serviceInfo.isPaused()) {
+                                    startTracking();
+                                } else {
+                                    if (Float.valueOf(speed) < 15 && serviceInfo.isStarted())
+                                        ValidateIfAutoStartTrace(serviceInfo);
+                                }
                         } else {
                             Intent i = new
                                     Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
@@ -605,28 +628,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private void ValidateIfEndedService() {
-        Date res = GlobalClass.getInstance().getCurrentTime();
-        int id = GlobalClass.getInstance().getCurrentService().getId();
-        String endTime = "";
-        if (currentServiceInfo == null)
-            currentServiceInfo = serviceRepository.getStartetService();
-        try {
-            endTime = currentServiceInfo.getFechaFinal();
-            Date dateEndService = new SimpleDateFormat("HH:mm").parse(endTime);
+    private void ValidateIfEndedService(ServiceInfo serviceInfo) {
+        Date endedServiceDate = GlobalClass.getInstance().getCurrentTime();
+        Date currentTime = GlobalClass.getInstance().getCurrentTime();
 
-            int timeDif = dateEndService.compareTo(res);
-            int timeDifTest = res.compareTo(dateEndService);
 
-            if (timeDif == -1) {
-                sendNotificationEndService(); //Envia notificación, indicando que la hora del servicio ha sido superada y pregunta si desea continuar el servicio
+        currentServiceInfo = serviceInfo;
+        if (currentServiceInfo != null) {
+            String srEndServiceTime = currentServiceInfo.getFechaFinal();
+            Date endServiceTime = null;
+            try {
+                endServiceTime = new SimpleDateFormat("HH:mm").parse(srEndServiceTime);//Genera varaible de tipo date con la fecha acutal y hora actual
+                endedServiceDate.setHours(endServiceTime.getHours());//A la fecha actual le setea la hora en que finaliza el servicio
+                endedServiceDate.setMinutes(endServiceTime.getMinutes() + 30);
+
+                if (endedServiceDate.before(currentTime))
+                    sendNotificationEndService();
+
+            } catch (ParseException e) {
+                e.printStackTrace();
             }
+        }
+
+    }
+
+    //Valida si se debe iniciar automáticamente la traza
+    private void ValidateIfAutoStartTrace(ServiceInfo serviceInfo) {
+        String srPauseDate = serviceInfo.getFechaPausa();
+        Date currentDate = new Date();
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
+            if (serviceInfo.getFechaPausa().equals("")) {
+                serviceInfo.setFechaPausa(sdf.format(new Date()));
+                serviceRepository.updateService(serviceInfo);
+            }
+
+            Date dtPauseDate = sdf.parse(srPauseDate);
+            long diffInMillies = Math.abs(dtPauseDate.getTime() - currentDate.getTime());
+            long diff = diffInMillies / (60 * 1000);
+
+            if (diff >= 15)
+                pauseService(sdf);
+
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        catch (Exception e){
-            e.printStackTrace();
-        }
+
     }
 
     private void sendNotificationEndService() {
@@ -731,7 +779,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             startBackgroundServices();
 
-            if (GlobalClass.getInstance().getCurrentService().isStarted()) {
+            if (GlobalClass.getInstance().getCurrentService().isStarted() || GlobalClass.getInstance().getCurrentService().isPaused()) {
                 mTracking = true;
                 startTracking();
             }
@@ -748,10 +796,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void haveStartService() {
         ServiceInfo result = serviceRepository.getStartetService();
 
-        int indexService = GlobalClass.getInstance().getListServicesDriver().indexOf(result);
+        if (result == null) {
+            toggleButtons();
+            activeAllButtons();
+            serviceRepository.deleteAllService();
+            return;
+        }
 
-        if (indexService == -1) {
-            serviceRepository.deleteService(result);
+        if (!GlobalClass.getInstance().getCurrentService().getId().equals(result.getId())) {
+            inactiveAllButtons();
         } else if (result != null) {
             if (result.getIdService() != GlobalClass.getInstance().getCurrentService().getIdService())
                 inactiveAllButtons();
