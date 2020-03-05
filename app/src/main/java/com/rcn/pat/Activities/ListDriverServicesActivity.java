@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -104,7 +105,13 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         GlobalClass.getInstance().setCurrentService(idServicio);
         Intent intent = null;
         intent = new Intent(ListDriverServicesActivity.this, MainActivity.class);
-        startActivity(intent);
+        startActivityForResult(intent,1);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        asyncListProductions(true);
     }
 
     @Override

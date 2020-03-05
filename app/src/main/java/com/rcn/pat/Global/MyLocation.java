@@ -6,6 +6,7 @@ import androidx.room.PrimaryKey;
 @Entity
 public class MyLocation {
     private String address;
+
     @PrimaryKey(autoGenerate = true)
     private int id;
     private double latitude;

@@ -8,6 +8,7 @@ import android.text.format.Time;
 
 import com.rcn.pat.ViewModels.ServiceInfo;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,7 +18,7 @@ import java.util.Locale;
 public class GlobalClass extends Application {
     private static GlobalClass instance;
 
-    private int minSendLocationToDatabase= 20; //Intervalo en minutos para enviar los datos de localización al backend
+    private int minSendLocationToDatabase= 15; //Intervalo en segundos para enviar los datos de localización al backend
     private String docNumber;
     private ServiceInfo currentService;
     private ArrayList<ServiceInfo>listServicesDriver;
@@ -64,6 +65,26 @@ public class GlobalClass extends Application {
         this.currentService = currentService;
     }
 
+    public String getDateFormat(String inputDate){
+        Date parsed = null;
+        String outputDate = "";
+
+        String inputFormat = "yyyy-MM-dd'T'HH:mm:ss";
+        String outputFormat = "HH:mm";
+
+        SimpleDateFormat df_input = new SimpleDateFormat(inputFormat, java.util.Locale.getDefault());
+        SimpleDateFormat df_output = new SimpleDateFormat(outputFormat, java.util.Locale.getDefault());
+
+        try {
+            parsed = df_input.parse(inputDate);
+            outputDate = df_output.format(parsed);
+
+        } catch (ParseException e) {
+
+        }
+
+        return outputDate;
+    }
     public Date getCurrentTime() {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         Date date = new Date();

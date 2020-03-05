@@ -16,19 +16,13 @@ public class LocationRepository {
     public LocationRepository(Context context) {
         myDataBase = Room.databaseBuilder(context, MyDataBase.class, DB_NAME)
                 .fallbackToDestructiveMigration()
+                .allowMainThreadQueries()
                 .build();
     }
 
 
     public void insertLocation(final MyLocation location) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                myDataBase.dao().insertLocation(location);
-                List<MyLocation> data = getLocations();
-                return null;
-            }
-        }.execute();
+        myDataBase.dao().insertLocation(location);
     }
 
     public void updateLocation(final MyLocation location) {
@@ -56,27 +50,12 @@ public class LocationRepository {
     }
 
     public void deleteAllLocation() {
-
-
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... voids) {
-                    myDataBase.dao().deleteAllLocation();
-                    return null;
-                }
-            }.execute();
-
+        myDataBase.dao().deleteAllLocation();
     }
 
 
     public void deleteLocation(final MyLocation location) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                myDataBase.dao().deleteLocation(location);
-                return null;
-            }
-        }.execute();
+        myDataBase.dao().deleteLocation(location);
     }
 
     public LiveData<MyLocation> getLocation(int id) {

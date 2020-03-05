@@ -22,38 +22,26 @@ public class ServiceRepository {
     }
 
 
-    public void insertService(final ServiceInfo serviceInfo) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                myDataBase.servicesDao().insertServiceInfo(serviceInfo);
-                ServiceInfo data = getService(serviceInfo.getId());
-                return null;
-            }
-        }.execute();
+    public ServiceInfo insertService(final ServiceInfo serviceInfo) {
+        //Valida que no haya un registro con el mismo id
+        ServiceInfo data = getService(serviceInfo.getId());
+        if (data != null)
+            return serviceInfo;
+        myDataBase.servicesDao().insertServiceInfo(serviceInfo);
+        GlobalClass.getInstance().setCurrentService(serviceInfo);
+        data = getService(serviceInfo.getId());
+        return data;
     }
 
     public void updateService(final ServiceInfo ServiceInfo) {
-
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                myDataBase.servicesDao().updateServiceInfo(ServiceInfo);
-                return null;
-            }
-        }.execute();
+        myDataBase.servicesDao().updateServiceInfo(ServiceInfo);
+        GlobalClass.getInstance().setCurrentService(ServiceInfo);
     }
 
     public void deleteService(final int id) {
         final ServiceInfo ServiceInfo = getService(id);
         if (ServiceInfo != null) {
-            new AsyncTask<Void, Void, Void>() {
-                @Override
-                protected Void doInBackground(Void... voids) {
-                    myDataBase.servicesDao().deleteServiceInfo(ServiceInfo);
-                    return null;
-                }
-            }.execute();
+            myDataBase.servicesDao().deleteServiceInfo(ServiceInfo);
         }
     }
 

@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
 
     <application
         android:name=".Global.GlobalClass"
@@ -32,16 +35,7 @@
             android:name=".Activities.MainActivity"
             android:exported="true" />
 
-        <receiver
-            android:name=".Global.BackgroundService"
-            android:enabled="true"
-            android:label="RestartServiceWhenStopped"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
+        <receiver android:name=".Global.AlarmReceiver"></receiver>
         <service
             android:name=".Global.BackgroundService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

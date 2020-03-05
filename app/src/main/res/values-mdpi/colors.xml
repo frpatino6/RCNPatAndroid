@@ -4,10 +4,12 @@
     <color name="primaryLightColor">#1AB394</color>
     <color name="primaryDarkColor">#23C6C8</color>
     <color name="primaryTextColor">#ffffff</color>
-    <color name="cardViewHeaderColor">#E8EAF6</color>
-    <color name="cardViewHeaderTextColor">#EC4758</color>
-    <color name="label_color_list_service">#ACACAC</color>
+    <color name="cardViewHeaderColor">#4fb3bf</color>
+    <color name="cardViewHeaderTextColor">#ffffff</color>
+    <color name="label_color_list_service">#212121</color>
+    <color name="action_textcolor">#000000</color>
     <color name="cancel_button">#ec4758</color>
+    <color name="text_color_detail_service">#00251a</color>
 
 
 </resources>

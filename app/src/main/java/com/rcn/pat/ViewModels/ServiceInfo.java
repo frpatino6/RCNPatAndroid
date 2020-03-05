@@ -5,18 +5,21 @@ import androidx.room.PrimaryKey;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 
 @Entity
 public class ServiceInfo {
-    @PrimaryKey(autoGenerate = true)
-    private int idService;
     private String CelularConductor;
     private String CelularSolicitante;
     private String DescripcionRecorrido;
     private String FechaFinal;
     private String FechaInicial;
+    private String FechaNotification;
+    private String FechaPausa;
+    private String FechaUltimaNotification;
     private Integer Id;
     private String NombreConductor;
     private String NombreModalidadServicio;
@@ -26,15 +29,41 @@ public class ServiceInfo {
     private String Observaciones;
     private String Placa;
     private String SolicitudNombre;
-    private String FechaPausa;
+    @PrimaryKey(autoGenerate = true)
+    private int idService;
+    private boolean isNotify = false;//Indica si ya dse notificó que el servicio ha finalizado(LA NOTIICACIÓN PREGUNTA SI DESEA FINALIZAR O CONTINUAR)
     private boolean isPaused = false;
     private boolean isStarted = false;
     private boolean isStoped = true;
+    private int minutesAfter = 1;//Cantidad de minutos despues de la hora de finalización del servicio para notificar
+
+    public String getFechaUltimaNotification() {
+        return FechaUltimaNotification;
+    }
+
+    public void setFechaUltimaNotification(String fechaUltimaNotification) {
+        FechaUltimaNotification = fechaUltimaNotification;
+    }
     // Getter Methods
 
+    public int getMinutesAfter() {
+        return minutesAfter;
+    }
+
+    public void setMinutesAfter(int minutesAfter) {
+        this.minutesAfter = minutesAfter;
+    }
+
+    public boolean isNotify() {
+        return isNotify;
+    }
+
+    public void setNotify(boolean notify) {
+        isNotify = notify;
+    }
 
     public String getFechaPausa() {
-        return FechaPausa;
+        return FechaPausa == null ? "" : FechaPausa;
     }
 
     public void setFechaPausa(String fechaPausa) {
@@ -73,55 +102,43 @@ public class ServiceInfo {
         this.DescripcionRecorrido = DescripcionRecorrido;
     }
 
-    public String getFechaFinal() {
-        String inputPattern = "yyyy-MM-dd'T'HH:mm:ss";
-        String outputPattern = "HH:mm";
+    public String getFechaNotification() {
+        if (FechaNotification == null)
+            setNotifyDate();
+        return FechaNotification;
+    }
 
-        SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
-        SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
+    public void setFechaNotification(String fechaNotification) {
+        FechaNotification = fechaNotification;
+    }
 
-        Date date = null;
-        String str = null;
-
+    private void setNotifyDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+        final long ONE_MINUTE_IN_MILLIS = 60000;//millisecs
         try {
-            if (FechaFinal != null) {
-                date = inputFormat.parse(FechaFinal);
-                str = outputFormat.format(date);
-                return str;
-            }
+            Date dtPauseDate = sdf.parse(this.FechaFinal);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(dtPauseDate);
+            cal.add(Calendar.MINUTE, this.minutesAfter);
+            String newTime = sdf.format(cal.getTime());
+
+            FechaNotification = newTime;
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        return FechaFinal;
+    }
+
+    public String getFechaFinal() {
+        return FechaFinal == null ? "" : FechaFinal;
     }
 
     public void setFechaFinal(String FechaFinal) {
         this.FechaFinal = FechaFinal;
+        setNotifyDate();
     }
 
     public String getFechaInicial() {
-        String inputPattern = "yyyy-MM-dd'T'HH:mm:ss";
-        String outputPattern = "HH:mm";
-
-        SimpleDateFormat inputFormat = new SimpleDateFormat(inputPattern);
-        SimpleDateFormat outputFormat = new SimpleDateFormat(outputPattern);
-
-        Date date = null;
-        String str = null;
-
-        try {
-
-            if (FechaInicial != null) {
-                date = inputFormat.parse(FechaInicial);
-                str = outputFormat.format(date);
-                return  str;
-            } else {
-                return "";
-            }
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return str == null ? FechaInicial : str;
+        return FechaInicial == null ? "" : FechaInicial;
     }
 
     public void setFechaInicial(String FechaInicial) {
@@ -216,6 +233,10 @@ public class ServiceInfo {
 
     public void setStarted(boolean started) {
         isStarted = started;
+        if (isStarted) {
+            this.isPaused = false;
+            this.isStoped = false;
+        }
     }
 
     public boolean isStoped() {

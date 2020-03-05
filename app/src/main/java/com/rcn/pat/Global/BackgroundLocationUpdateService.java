@@ -43,12 +43,14 @@ import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnCanceledListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.R;
 import com.rcn.pat.ViewModels.LocationViewModel;
+import com.rcn.pat.ViewModels.ServiceInfo;
 
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
@@ -63,15 +65,13 @@ import java.util.concurrent.TimeUnit;
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
-/**
- * Created by Ketan Ramani on 05/11/18.
- */
 
 public class BackgroundLocationUpdateService extends Service implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     public int counter = 0;
     private final String TAG = "BackgroundLocationUpdateService";
     private final String TAG_LOCATION = "TAG_LOCATION";
     private Context context;
+    private Task<Location> lastLocation;
     private String latitude = "0.0", longitude = "0.0";
     /* Declare in manifest
     <service android:name=".BackgroundLocationUpdateService"/>
@@ -82,6 +82,8 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
     private LocationRequest mLocationRequest;
+    private ServiceRepository serviceRepository;
+    private ServiceInfo currentService;
     private SettingsClient mSettingsClient;
     private List<MyLocation> result;
     private boolean stopService = false;
@@ -94,30 +96,13 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         context = this;
         locationRepository = new LocationRepository(getApplicationContext());
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        serviceRepository = new ServiceRepository(getApplicationContext());
+        currentService = serviceRepository.getStartetService();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         StartForeground();
-        final Handler handler = new Handler();
-        final Runnable runnable = new Runnable() {
-
-            @RequiresApi(api = VERSION_CODES.KITKAT)
-            @Override
-            public void run() {
-                try {
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    if (!stopService) {
-                        handler.postDelayed(this, TimeUnit.SECONDS.toMillis(10));
-                    }
-                }
-            }
-        };
-        handler.postDelayed(runnable, 2000);
-
         buildGoogleApiClient();
         startTimer();
         return START_STICKY;
@@ -131,6 +116,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         if (mFusedLocationClient != null) {
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             Log.e(TAG_LOCATION, "Location Update Callback Removed");
+            timer.cancel();
         }
         super.onDestroy();
     }
@@ -217,22 +203,26 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         } else {
             if (locationRepository != null) {
                 MyLocation loc = new MyLocation();
-                loc.setLatitude(location.getLatitude());
-                loc.setLongitude(location.getLongitude());
-                loc.setTimeRead(gettime());
-                locationRepository.insertLocation(loc);
+                insertLocation(location, loc);
 
                 Intent intent = new Intent(SERVICE_RESULT);
                 intent.putExtra(SERVICE_MESSAGE, String.valueOf(location.getSpeed()));
                 localBroadcastManager.sendBroadcast(intent);
             }
-            Log.e(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude());
+            Log.d(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude() + " Speed : " + location.getSpeed());
         }
+    }
+
+    private void insertLocation(Location location, MyLocation loc) {
+        loc.setLatitude(location.getLatitude());
+        loc.setLongitude(location.getLongitude());
+        loc.setTimeRead(gettime());
+        locationRepository.insertLocation(loc);
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-
+        Log.d(TAG_LOCATION, "!!!!!!!!!onStatusChanged¡¡¡¡¡¡¡");
     }
 
     @Override
@@ -248,6 +238,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     @SuppressLint("MissingPermission")
     private void requestLocationUpdate() {
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        Log.e(TAG_LOCATION, "!!!!!requestLocationUpdate¡¡¡¡");
     }
 
     private String gettime() {
@@ -263,14 +254,9 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     }
 
     public void startTimer() {
-        //set a new Timer
         timer = new Timer();
-
-        //initialize the TimerTask's job
         initializeTimerTask();
-
-        //schedule the timer, to wake up every 1 second
-        timer.schedule(timerTask, 1000, GlobalClass.getInstance().getMinSendLocationToDatabase() * 1000); //
+        timer.schedule(timerTask, 3000, GlobalClass.getInstance().getMinSendLocationToDatabase() * 1000); //
     }
 
     public void initializeTimerTask() {
@@ -280,14 +266,19 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                 locationRepository = new LocationRepository(getApplicationContext());
                 try {
                     result = locationRepository.getLocations();
-
                     if (GlobalClass.getInstance().isNetworkAvailable())
                         if (result != null && result.size() > 0)
                             asyncLocations();
                     if (result != null && result.size() == 0) {
+                        currentService = serviceRepository.getStartetService();
                         Intent intent = new Intent(SERVICE_RESULT);
                         intent.putExtra(SERVICE_MESSAGE, "0");
                         localBroadcastManager.sendBroadcast(intent);
+                        lastLocation = mFusedLocationClient.getLastLocation();
+                        MyLocation loc = new MyLocation();
+                        insertLocation(lastLocation.getResult(), loc);
+                        result = locationRepository.getLocations();
+                        asyncLocations();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -296,12 +287,20 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         };
     }
 
+    private boolean currentServiceIsLowSpeed() {
+        ServiceInfo serviceInfo = new ServiceRepository(getApplicationContext()).getStartetService();
+        if (serviceInfo != null) {
+            return serviceInfo.isPaused();
+        }
+        return false;
+    }
+
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(10 * 1000);
-        mLocationRequest.setSmallestDisplacement(2);
-        mLocationRequest.setFastestInterval(2 * 1000);
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setSmallestDisplacement(0.1F);
+        mLocationRequest.setFastestInterval(1000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
@@ -370,9 +369,13 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
 
         ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
 
-        for (MyLocation myLocation : result) {
-            locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId()));
+        boolean isCurrentServiceSlowSpeed = currentServiceIsLowSpeed();
 
+        for (MyLocation myLocation : result) {
+            if (isCurrentServiceSlowSpeed) {
+                locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId(), 1));
+            } else
+                locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId(), 0));
         }
         String resultJson = json.toJson(locationViewModels);
 
@@ -412,32 +415,5 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     protected GoogleApiClient mGoogleApiClient;
     protected LocationSettingsRequest mLocationSettingsRequest;
 
-    class asynGeoLocation extends AsyncTask {
-
-        @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-        @Override
-        protected Object doInBackground(Object[] objects) {
-
-            locationRepository = new LocationRepository(getApplicationContext());
-            result = locationRepository.getLocations();
-            return true;
-        }
-
-        @Override
-        protected void onPreExecute() {
-
-
-        }
-
-        @RequiresApi(api = VERSION_CODES.KITKAT)
-        @Override
-        protected void onPostExecute(Object o) {
-
-            if (result.size() > 0)
-                asyncLocations();
-
-            super.onPostExecute(o);
-        }
-    }
 
 }

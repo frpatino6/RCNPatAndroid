@@ -23,6 +23,7 @@
 
     <style name="Card.Title" parent="TextAppearance.Widget.AppCompat.Toolbar.Title">
         <item name="android:textSize">24sp</item>
+        <item name="android:textColor">#ffffff</item>
     </style>
 
 </resources>

@@ -35,7 +35,7 @@
                 android:layout_marginTop="3dp"
                 android:layout_marginEnd="3dp"
                 android:layout_marginBottom="3dp"
-                android:background="@color/cardViewHeaderColor"
+                android:background="@color/primaryColor"
                 android:padding="10dp"
                 android:textColor="@color/cardViewHeaderTextColor"
                 android:textSize="@dimen/name_user_service"

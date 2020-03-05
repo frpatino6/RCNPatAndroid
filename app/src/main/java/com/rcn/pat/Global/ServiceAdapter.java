@@ -45,8 +45,8 @@ public class ServiceAdapter extends RecyclerView.Adapter<ServiceAdapter.MyViewHo
         txtUserService.setText(dataSet.get(listPosition).getNombreUsuarioSolicitante());
         txtPhone.setText(dataSet.get(listPosition).getCelularSolicitante());
 
-        txtBegin.setText(dataSet.get(listPosition).getFechaInicial());
-        txtEnd.setText(dataSet.get(listPosition).getFechaFinal());
+        txtBegin.setText(GlobalClass.getInstance().getDateFormat(dataSet.get(listPosition).getFechaInicial()));
+        txtEnd.setText(GlobalClass.getInstance().getDateFormat(dataSet.get(listPosition).getFechaFinal()));
 
         btnGoDetail.setOnClickListener(new View.OnClickListener() {
             @Override

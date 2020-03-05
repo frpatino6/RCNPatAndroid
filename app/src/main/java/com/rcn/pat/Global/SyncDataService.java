@@ -80,7 +80,7 @@ public class SyncDataService extends Service {
         ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
 
         for (MyLocation myLocation : result) {
-            locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId()));
+            //locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId()));
 
         }
         String resultJson = json.toJson(locationViewModels);

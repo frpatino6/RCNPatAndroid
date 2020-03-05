@@ -1,10 +1,28 @@
 package com.rcn.pat.ViewModels;
 
 public class LocationViewModel {
-    private String latitude;
-    private String longitude;
     private String fechaHora;
     private Integer id;
+    private int idMotivoPausa;
+    private String latitude;
+    private String longitude;
+    private String observaciones;
+
+    public int getIdMotivoPausa() {
+        return idMotivoPausa;
+    }
+
+    public void setIdMotivoPausa(int idMotivoPausa) {
+        this.idMotivoPausa = idMotivoPausa;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
 
     public String getLatitude() {
         return latitude;
@@ -38,10 +56,11 @@ public class LocationViewModel {
         this.id = id;
     }
 
-    public LocationViewModel(String latitude, String longitude, String fechaHora, Integer id) {
+    public LocationViewModel(String latitude, String longitude, String fechaHora, Integer id, int idMotivoPausa) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.fechaHora = fechaHora;
         this.id = id;
+        this.idMotivoPausa=idMotivoPausa;
     }
 }
