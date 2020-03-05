@@ -11,6 +11,4 @@ public class AlarmReceiver extends BroadcastReceiver {
     public void onReceive(Context arg0, Intent arg1) {
         Log.d("onReceive", "calling");
     }
-
-
 }
