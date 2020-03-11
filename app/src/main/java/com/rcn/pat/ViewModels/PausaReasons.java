@@ -1,13 +1,13 @@
 package com.rcn.pat.ViewModels;
 
 public class PausaReasons {
-    private float Id;
+    private Integer Id;
     private String Nombre;
 
 
     // Getter Methods
 
-    public float getId() {
+    public Integer getId() {
         return Id;
     }
 
@@ -17,7 +17,7 @@ public class PausaReasons {
 
     // Setter Methods
 
-    public void setId(float Id) {
+    public void setId(Integer Id) {
         this.Id = Id;
     }
 

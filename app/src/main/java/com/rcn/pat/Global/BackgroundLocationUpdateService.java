@@ -12,11 +12,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
@@ -60,7 +57,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
@@ -261,24 +257,25 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
 
     public void initializeTimerTask() {
         timerTask = new TimerTask() {
+            @SuppressLint("LongLogTag")
             @RequiresApi(api = Build.VERSION_CODES.KITKAT)
             public void run() {
                 locationRepository = new LocationRepository(getApplicationContext());
                 try {
                     result = locationRepository.getLocations();
-                    if (GlobalClass.getInstance().isNetworkAvailable())
+                    if (GlobalClass.getInstance().isNetworkAvailable()) {
                         if (result != null && result.size() > 0)
                             asyncLocations();
-                    if (result != null && result.size() == 0) {
-                        currentService = serviceRepository.getStartetService();
-                        Intent intent = new Intent(SERVICE_RESULT);
-                        intent.putExtra(SERVICE_MESSAGE, "0");
-                        localBroadcastManager.sendBroadcast(intent);
+                        if (result != null && result.size() == 0) {
+                            currentService = serviceRepository.getStartetService();
+                            Intent intent = new Intent(SERVICE_RESULT);
+                            intent.putExtra(SERVICE_MESSAGE, "0");
+                            localBroadcastManager.sendBroadcast(intent);
+                            result = locationRepository.getLocations();
+                        }
+                    } else {
                         lastLocation = mFusedLocationClient.getLastLocation();
-                        MyLocation loc = new MyLocation();
-                        insertLocation(lastLocation.getResult(), loc);
-                        result = locationRepository.getLocations();
-                        asyncLocations();
+                        Log.i(TAG, "Localización offLine...");
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -369,13 +366,8 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
 
         ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
 
-        boolean isCurrentServiceSlowSpeed = currentServiceIsLowSpeed();
-
         for (MyLocation myLocation : result) {
-            if (isCurrentServiceSlowSpeed) {
-                locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId(), 1));
-            } else
-                locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId(), 0));
+            locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId(), GlobalClass.getInstance().getCurrentService().getPausedId()));
         }
         String resultJson = json.toJson(locationViewModels);
 

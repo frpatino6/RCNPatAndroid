@@ -21,12 +21,14 @@ import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.ServiceAdapter;
+import com.rcn.pat.Global.SortbyDate;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.R;
 import com.rcn.pat.ViewModels.PausaReasons;
 import com.rcn.pat.ViewModels.ServiceInfo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
@@ -81,6 +83,9 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                             Gson gson = new GsonBuilder().create();
                             // Define Response class to correspond to the JSON response returned
                             data = gson.fromJson(res, token.getType());
+
+                            Collections.sort(data, new SortbyDate());
+
                             GlobalClass.getInstance().setListServicesDriver(data);
                             adapter = new ServiceAdapter(data, new onClickVIewDetail() {
                                 @Override

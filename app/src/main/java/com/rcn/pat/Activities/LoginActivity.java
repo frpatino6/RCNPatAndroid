@@ -142,6 +142,7 @@ public class LoginActivity extends AppCompatActivity {
                 Gson gson = new GsonBuilder().create();
                 data = gson.fromJson(responseString, token.getType());
                 GlobalClass.getInstance().setDocNumber(data.getNumero_Documento());
+                isError= false;
 
             }
         });
