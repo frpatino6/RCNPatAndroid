@@ -58,6 +58,19 @@ public class ServiceRepository {
 
     }
 
+    public void deleteOldServiceInfo() {
+
+
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                myDataBase.servicesDao().deleteOldServiceInfo();
+                return null;
+            }
+        }.execute();
+
+    }
+
 
     public void deleteService(final ServiceInfo ServiceInfo) {
         new AsyncTask<Void, Void, Void>() {

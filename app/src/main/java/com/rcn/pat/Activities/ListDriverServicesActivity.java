@@ -21,6 +21,7 @@ import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.ServiceAdapter;
+import com.rcn.pat.Global.ServiceRepository;
 import com.rcn.pat.Global.SortbyDate;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.R;
@@ -46,7 +47,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private void asyncListProductions(boolean showProgress) {
 
 
-        if(showProgress) {
+        if (showProgress) {
             dialogo = new ProgressDialog(ListDriverServicesActivity.this);
             dialogo.setMessage("Cargando servicios...");
             dialogo.setIndeterminate(false);
@@ -94,6 +95,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                                 }
                             });
                             recyclerView.setAdapter(adapter);
+                            deleteOldServices();
 
 
                         } catch (JsonSyntaxException e) {
@@ -110,13 +112,17 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         GlobalClass.getInstance().setCurrentService(idServicio);
         Intent intent = null;
         intent = new Intent(ListDriverServicesActivity.this, MainActivity.class);
-        startActivityForResult(intent,1);
+        startActivityForResult(intent, 1);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         asyncListProductions(true);
+    }
+
+    private void deleteOldServices() {
+        new ServiceRepository(getApplicationContext()).deleteOldServiceInfo();
     }
 
     @Override
@@ -136,6 +142,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                 asyncListProductions(false);
             }
         });
+
         asyncListProductions(true);
     }
 }

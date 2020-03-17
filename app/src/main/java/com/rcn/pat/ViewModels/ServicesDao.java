@@ -1,13 +1,10 @@
 package com.rcn.pat.ViewModels;
 
-import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
-
-
 
 import java.util.List;
 
@@ -26,6 +23,7 @@ public interface ServicesDao {
     @Query("SELECT * FROM ServiceInfo")
     List<ServiceInfo> getAllSections();
 
+
     @Update
     void updateServiceInfo(ServiceInfo serviceInfo);
 
@@ -35,4 +33,9 @@ public interface ServicesDao {
 
     @Query("DELETE FROM ServiceInfo")
     void deleteAllServiceInfo();
+
+
+    @Query(" delete FROM ServiceInfo " +
+            " where strftime('%d', `FechaFinal`)< strftime('%d', date())")
+    void deleteOldServiceInfo();
 }
