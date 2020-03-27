@@ -30,6 +30,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
@@ -51,7 +52,6 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.BuildConfig;
-import com.rcn.pat.Global.AlarmReceiver;
 import com.rcn.pat.Global.BackgroundLocationUpdateService;
 import com.rcn.pat.Global.BackgroundService;
 import com.rcn.pat.Global.CustomListViewDialog;
@@ -83,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private BroadcastReceiver broadcastReceiverBackgroundService;
     private BroadcastReceiver broadcastReceiverFirebase;
     private TextView btnPause;
+    private int endTask = -1;
     private TextView lblPause;
     private TextView btnStart;
     private TextView lblStart;
@@ -108,9 +109,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void startForegroundServices() {
 
-        if (!isMyServiceRunning(BackgroundLocationUpdateService.class))
-            startService(new Intent(MainActivity.this, BackgroundLocationUpdateService.class));
-        //startAlarm();
+        //if (!isMyServiceRunning(BackgroundLocationUpdateService.class))
+        Intent intent = new Intent(MainActivity.this, BackgroundLocationUpdateService.class);
+        startService(intent);
     }
 
     private void stopForegroundServices() {
@@ -164,18 +165,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 Gson gson = new GsonBuilder().create();
                                 // Define Response class to correspond to the JSON response returned
                                 dataPausaReasons = gson.fromJson(res, token.getType());
-                                DataAdapter dataAdapter = new DataAdapter(dataPausaReasons, new DataAdapter.RecyclerViewItemClickListener() {
-                                    @Override
-                                    public void clickOnItem(PausaReasons data) {
-                                        customDialog.dismiss();
-                                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                                        ServiceInfo serviceInfo = serviceRepository.getStartetService();
-                                        pauseService(sdf, data.getId());
-                                    }
-                                });
-                                customDialog = new CustomListViewDialog(MainActivity.this, dataAdapter);
-                                customDialog.show();
-                                customDialog.setCanceledOnTouchOutside(false);
+                                setPauseReasonsDialog();
 
 
                             } catch (JsonSyntaxException e) {
@@ -188,6 +178,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void setPauseReasonsDialog() {
+        DataAdapter dataAdapter = new DataAdapter(dataPausaReasons, new DataAdapter.RecyclerViewItemClickListener() {
+            @Override
+            public void clickOnItem(PausaReasons data) {
+                customDialog.dismiss();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                ServiceInfo serviceInfo = serviceRepository.getStartetService();
+                pauseService(sdf, data.getId());
+            }
+        });
+        customDialog = new CustomListViewDialog(MainActivity.this, dataAdapter);
+        customDialog.show();
+        customDialog.setCanceledOnTouchOutside(false);
+
     }
 
     private void pauseService(SimpleDateFormat sdf, int idPuase) {
@@ -206,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         serviceInfo.setFechaPausa(sdf.format(new Date()));
         serviceInfo.setPausedId(idPuase);
         serviceRepository.updateService(serviceInfo);
+        startForegroundServices();
         toggleButtons();
 
     }
@@ -262,7 +269,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void confirmCausePauseDialog() {
-        asyncListPausaReasons();
+
+        if (dataPausaReasons == null)
+            asyncListPausaReasons();
+        else {
+            setPauseReasonsDialog();
+        }
 
     }
 
@@ -341,8 +353,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStop.setTypeface(typeface);
         fontTextView2.setTypeface(typeface);
         serviceRepository = new ServiceRepository(getApplicationContext());
-        Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-        pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, 0);
 
     }
 
@@ -487,6 +497,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
     private void stopBackgroundServices() {
         try {
 
@@ -607,6 +622,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // Preguntando al usuario, si desea finalizar el servicio, ya que la hora ha sido superada
 
                     //Pregunta si el servicio está inactivo, si esta inactivo es porque se encuentra visualizando un servicio que no es el que está activo
+
+
                     if (blockService)
                         return;
                     else {
@@ -615,6 +632,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                         try {
                             String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
+                            if (speed.equals("EndTask")) {
+                                stopTracking();
+                                return;
+                            }
                             //Si la velocidad es superior a 4 kms/h inicia automaticamente el servicio.
                             if (!speed.equals("")) {
                                 if (serviceInfo != null)
@@ -624,7 +645,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         serviceInfo.setPaused(false);
                                         serviceRepository.updateService(serviceInfo);
                                         startTracking(true);
-                                        sendNotificationEndService("Se ha detectado actividad y el servicio se reanudará automáticamente");
+                                        sendNotificationEndService("Se ha detectado actividad y el servicio se reanudará automáticamente", false);
                                     } else {
                                         if (Float.valueOf(speed) < 4 && serviceInfo.isStarted()) {
                                             if (serviceInfo != null)
@@ -661,7 +682,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
             };
 
+            Intent intent = getIntent();
+            Bundle answerBundle = intent.getExtras();
+            if (intent.hasExtra("EndTask")) {
+                String ns = Context.NOTIFICATION_SERVICE;
+                endTask = answerBundle.getInt("EndTask");
+                NotificationManager nMgr = (NotificationManager) ctx.getSystemService(ns);
+                nMgr.cancelAll();
+            } else
+                endTask = -1;
+
+            if (endTask == 1) {
+                stopTracking();
+
+            }
+
             initializaData();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -686,7 +723,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     endedServiceDate.setMinutes(endServiceTime.getMinutes() + serviceInfo.getMinutesAfter());
 
                     if (endedServiceDate.before(currentTime)) {
-                        sendNotificationEndService("El servicio a superado la hora estimada de finalización");
+                        sendNotificationEndService("El servicio a superado la hora límite. ¿Desea continuar?", true);
                         showConfirmStopEndedService(serviceInfo, "El servicio a superado la hora límite. ¿Desea continuar?");
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
                         String nextDateNotifications = sdf.format(currentTime.getTime());
@@ -704,7 +741,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private void showConfirmStopEndedService(final ServiceInfo serviceInfo, String contentMessage) {
+    private void showConfirmStopEndedService(final ServiceInfo serviceInfo, String
+            contentMessage) {
         // Use the Builder class for convenient dialog construction
         try {
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
@@ -736,7 +774,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    private void showConfirmServiceReadyToEnd(String contentMessage) {
+    private void showConfirmDialog(String contentMessage) {
         // Use the Builder class for convenient dialog construction
         try {
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
@@ -777,7 +815,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (diff >= 1) {
                     Log.i(TAG, "Pausing service ");
                     pauseService(sdf, 1);
-                    sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
+                    sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
+                    showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
                 }
             }
 
@@ -789,31 +828,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void ValidateIfServiceReadyToEnd(ServiceInfo serviceInfo) {
         try {
-            Date dateEnd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(serviceInfo.getFechaFinal());
-            long secondsInMilli = 1000;
-            long minutesInMilli = secondsInMilli * 60;
-            long different = dateEnd.getTime() - GlobalClass.getInstance().getCurrentTime().getTime();
-            long elapsedMinutes = different / minutesInMilli;
-            Log.i(TAG, "Validando tiempo restante para terminar el servicio. Minutos restantes: " + elapsedMinutes);
-            if (elapsedMinutes == 60) {
-                showConfirmServiceReadyToEnd("El servicio finalizará en una hora");
-                sendNotificationEndService("El servicio finalizará en una hora");
+            if (serviceInfo != null) {
+                Date dateEnd = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(serviceInfo.getFechaFinal());
+                long secondsInMilli = 1000;
+                long minutesInMilli = secondsInMilli * 60;
+                long different = dateEnd.getTime() - GlobalClass.getInstance().getCurrentTime().getTime();
+                long elapsedMinutes = different / minutesInMilli;
+                Log.i(TAG, "Validando tiempo restante para terminar el servicio. Minutos restantes: " + elapsedMinutes);
+                if (elapsedMinutes == 60 && !serviceInfo.isIshourNotify()) {
+                    serviceInfo.setIshourNotify(true);
+                    showConfirmDialog("El servicio finalizará en una hora");
+                    sendNotificationEndService("El servicio finalizará en una hora", false);
+                }
+                if (elapsedMinutes == 30 && !serviceInfo.isIshalfhourNotify()) {
+                    serviceInfo.setIshalfhourNotify(true);
+                    showConfirmDialog("El servicio finalizará en  media hora");
+                    sendNotificationEndService("El servicio finalizará en media hora", false);
+                }
             }
-            if (elapsedMinutes == 60) {
-                showConfirmServiceReadyToEnd("El servicio finalizará en  media hora");
-                sendNotificationEndService("El servicio finalizará en media hora");
-            }
-
         } catch (ParseException e) {
             e.printStackTrace();
         }
-
-
     }
 
-    private void sendNotificationEndService(String contentText) {
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent, PendingIntent.FLAG_ONE_SHOT);
+    private void sendNotificationEndService(String contentText, boolean showButtons) {
+
+        Intent intent = new Intent(this, BackgroundLocationUpdateService.class);
+        Bundle endBundle = new Bundle();
+        endBundle.putInt("EndTask", 1);//This is the value I want to pass
+        intent.putExtras(endBundle);
+        PendingIntent pendingIntentEnd =
+                PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        Intent intentContinue = new Intent(this, MainActivity.class);
+        Bundle continueBundle = new Bundle();
+        continueBundle.putInt("EndTask", 0);//This is the value I want to pass
+        intentContinue.putExtras(continueBundle);
+        PendingIntent pendingIntentContinue =
+                PendingIntent.getActivity(this, 1, intentContinue, PendingIntent.FLAG_ONE_SHOT);
+
 
         String CHANNEL_ID = "channel_location";
         String CHANNEL_NAME = "channel_location";
@@ -837,9 +891,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         builder.setSound(notificationSound);
         builder.setAutoCancel(true);
         builder.setSmallIcon(R.drawable.icon);
-        builder.setContentIntent(pendingIntent);
+
+        if (showButtons) {
+            builder.addAction(R.drawable.icon, "Finalizar", pendingIntentEnd);
+            builder.addAction(R.drawable.icon, "Continuar", pendingIntentContinue);
+        }
         Notification notification = builder.build();
         notificationManager.notify(0, builder.getNotification());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.hasExtra("key")) {
+            //do your Stuff
+        }
     }
 
     @Override

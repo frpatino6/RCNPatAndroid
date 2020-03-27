@@ -3,8 +3,6 @@ package com.rcn.pat.ViewModels;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-import com.rcn.pat.Global.ServiceRepository;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -38,6 +36,8 @@ public class ServiceInfo {
     private boolean isPaused = false;
     private boolean isStarted = false;
     private boolean isStoped = true;
+    private boolean ishourNotify = false;
+    private boolean ishalfhourNotify = false;
     private int minutesAfter = 15;//Cantidad de minutos despues de la hora de finalización del servicio para notificar
 
     public String getFechaUltimaNotification() {
@@ -259,6 +259,22 @@ public class ServiceInfo {
 
     public void setPausedId(Integer pausedId) {
         this.pausedId = pausedId;
+    }
+
+    public boolean isIshourNotify() {
+        return ishourNotify;
+    }
+
+    public void setIshourNotify(boolean ishourNotify) {
+        this.ishourNotify = ishourNotify;
+    }
+
+    public boolean isIshalfhourNotify() {
+        return ishalfhourNotify;
+    }
+
+    public void setIshalfhourNotify(boolean ishalfhourNotify) {
+        this.ishalfhourNotify = ishalfhourNotify;
     }
 }
 

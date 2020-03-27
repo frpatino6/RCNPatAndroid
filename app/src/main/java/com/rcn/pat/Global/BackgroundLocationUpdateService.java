@@ -67,6 +67,9 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     private final String TAG = "BackgroundLocationUpdateService";
     private final String TAG_LOCATION = "TAG_LOCATION";
     private Context context;
+    private ServiceInfo currentService;
+    private int endTask;
+    private Integer isStoped;
     private Task<Location> lastLocation;
     private String latitude = "0.0", longitude = "0.0";
     /* Declare in manifest
@@ -78,10 +81,9 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     private FusedLocationProviderClient mFusedLocationClient;
     private LocationCallback mLocationCallback;
     private LocationRequest mLocationRequest;
-    private ServiceRepository serviceRepository;
-    private ServiceInfo currentService;
     private SettingsClient mSettingsClient;
     private List<MyLocation> result;
+    private ServiceRepository serviceRepository;
     private boolean stopService = false;
     private Timer timer;
     private TimerTask timerTask;
@@ -98,9 +100,25 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        StartForeground();
-        buildGoogleApiClient();
-        startTimer();
+
+
+        Bundle answerBundle = intent.getExtras();
+        if (intent.hasExtra("EndTask")) {
+            String ns = Context.NOTIFICATION_SERVICE;
+            endTask = answerBundle.getInt("EndTask");
+            NotificationManager nMgr = (NotificationManager) context.getSystemService(ns);
+            nMgr.cancelAll();
+        } else
+            endTask = -1;
+
+        if (endTask == 1) {
+           sendResult("EndTask");
+        } else {
+            StartForeground();
+            buildGoogleApiClient();
+            startTimer();
+            this.requestLocationUpdate();
+        }
         return START_STICKY;
     }
 
@@ -113,6 +131,9 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
             mFusedLocationClient.removeLocationUpdates(mLocationCallback);
             Log.e(TAG_LOCATION, "Location Update Callback Removed");
             timer.cancel();
+            timer.purge();
+            timer = null;
+            requestLocationUpdate();
         }
         super.onDestroy();
     }
@@ -179,6 +200,18 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         };
     }
 
+    public void startTimer() {
+        timer = new Timer();
+        initializeTimerTask();
+        timer.schedule(timerTask, 3000, GlobalClass.getInstance().getMinSendLocationToDatabase() * 1000); //
+    }
+
+    @SuppressLint("MissingPermission")
+    private void requestLocationUpdate() {
+        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+        Log.e(TAG_LOCATION, "!!!!!requestLocationUpdate¡¡¡¡");
+    }
+
     private void connectGoogleClient() {
         GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
         int resultCode = googleAPI.isGooglePlayServicesAvailable(context);
@@ -209,13 +242,6 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         }
     }
 
-    private void insertLocation(Location location, MyLocation loc) {
-        loc.setLatitude(location.getLatitude());
-        loc.setLongitude(location.getLongitude());
-        loc.setTimeRead(gettime());
-        locationRepository.insertLocation(loc);
-    }
-
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         Log.d(TAG_LOCATION, "!!!!!!!!!onStatusChanged¡¡¡¡¡¡¡");
@@ -229,30 +255,6 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     @Override
     public void onProviderDisabled(String provider) {
 
-    }
-
-    @SuppressLint("MissingPermission")
-    private void requestLocationUpdate() {
-        mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
-        Log.e(TAG_LOCATION, "!!!!!requestLocationUpdate¡¡¡¡");
-    }
-
-    private String gettime() {
-        SimpleDateFormat sdf = null;
-        try {
-            sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return sdf.format(new Date());
-    }
-
-    public void startTimer() {
-        timer = new Timer();
-        initializeTimerTask();
-        timer.schedule(timerTask, 3000, GlobalClass.getInstance().getMinSendLocationToDatabase() * 1000); //
     }
 
     public void initializeTimerTask() {
@@ -282,6 +284,80 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                 }
             }
         };
+    }
+
+    private void insertLocation(Location location, MyLocation loc) {
+        loc.setLatitude(location.getLatitude());
+        loc.setLongitude(location.getLongitude());
+        loc.setTimeRead(gettime());
+        locationRepository.insertLocation(loc);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void asyncLocations() {
+        Log.i("Enviando posiciones", "in timer ++++  ");
+
+        String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.setTimeout(60000);
+        String tipo = "application/json";
+
+        StringEntity entity;
+        Gson json = new Gson();
+
+        ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
+
+        for (MyLocation myLocation : result) {
+            locationViewModels.add(
+                    new LocationViewModel(
+                            String.valueOf(myLocation.getLatitude())
+                            , String.valueOf(myLocation.getLongitude())
+                            , myLocation.getTimeRead()
+                            , GlobalClass.getInstance().getCurrentService().getId()
+                            , stopService ? -1 : GlobalClass.getInstance().getCurrentService().getPausedId()));
+        }
+        String resultJson = json.toJson(locationViewModels);
+
+        entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
+        client.post(context, url, entity, tipo, new TextHttpResponseHandler() {
+
+            @Override
+            public boolean getUseSynchronousMode() {
+                return false;
+            }
+
+            @SuppressLint("RestrictedApi")
+            @Override
+            public void onFinish() {
+
+
+            }
+
+            @SuppressLint("LongLogTag")
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
+                Log.i(TAG, "ERROR Locations sended: " + responseBody + "  " + error.getMessage());
+            }
+
+            @SuppressLint({"RestrictedApi", "LongLogTag"})
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                Log.i(TAG, "Sended locations " + result.size());
+                locationRepository.deleteAllLocation();
+            }
+        });
+    }
+
+    private String gettime() {
+        SimpleDateFormat sdf = null;
+        try {
+            sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return sdf.format(new Date());
     }
 
     private boolean currentServiceIsLowSpeed() {
@@ -352,57 +428,9 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         buildGoogleApiClient();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void asyncLocations() {
-        Log.i("Enviando posiciones", "in timer ++++  ");
-
-        String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(60000);
-        String tipo = "application/json";
-
-        StringEntity entity;
-        Gson json = new Gson();
-
-        ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
-
-        for (MyLocation myLocation : result) {
-            locationViewModels.add(new LocationViewModel(String.valueOf(myLocation.getLatitude()), String.valueOf(myLocation.getLongitude()), myLocation.getTimeRead(), GlobalClass.getInstance().getCurrentService().getId(), GlobalClass.getInstance().getCurrentService().getPausedId()));
-        }
-        String resultJson = json.toJson(locationViewModels);
-
-        entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
-        client.post(context, url, entity, tipo, new TextHttpResponseHandler() {
-
-            @Override
-            public boolean getUseSynchronousMode() {
-                return false;
-            }
-
-            @SuppressLint("RestrictedApi")
-            @Override
-            public void onFinish() {
-
-
-            }
-
-            @SuppressLint("LongLogTag")
-            @Override
-            public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
-                Log.i(TAG, "ERROR Locations sended: " + responseBody + "  " + error.getMessage());
-            }
-
-            @SuppressLint({"RestrictedApi", "LongLogTag"})
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                Log.i(TAG, "Sended locations " + result.size());
-                locationRepository.deleteAllLocation();
-            }
-        });
-    }
-
     public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
     public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
+    public static final String SERVICE_ACTION_STOP = "com.service.stopBackgroundLocationService";
     /* For Google Fused API */
     protected GoogleApiClient mGoogleApiClient;
     protected LocationSettingsRequest mLocationSettingsRequest;
