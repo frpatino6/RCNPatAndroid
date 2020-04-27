@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.text.TextUtils;
@@ -32,34 +33,61 @@ import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.BuildConfig;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.R;
+import com.rcn.pat.Repository.LoginRepository;
 import com.rcn.pat.ViewModels.LoginViewModel;
 
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.conn.ConnectTimeoutException;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class LoginActivity extends AppCompatActivity {
-    private static final String TAG = "LoginActivity";
     private Button btnLogin;
     private LoginViewModel data;
     private String deviceToken;
     private ProgressDialog dialogo;
     private StringEntity entity;
     private boolean isError;
+    private LoginRepository loginRepository;
     private EditText txtPws;
     private EditText txtUserName;
+
+    @RequiresApi(api = VERSION_CODES.KITKAT)
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+        getSupportActionBar().hide();
+
+        InitializaControls();
+
+        InitializaEvents();
+
+        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
+        getCurrentDeviceToken();
+
+        existLoginAutenticated();
+
+        if (android.os.Build.VERSION.SDK_INT > 9) {
+            StrictMode.ThreadPolicy policy = new
+                    StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
+    }
 
     private void InitializaControls() {
         txtUserName = findViewById(R.id.txtUserName);
         txtPws = findViewById(R.id.txtPws);
         btnLogin = findViewById(R.id.btnLogin);
+
+        loginRepository = new LoginRepository(getApplicationContext());
         if (BuildConfig.DEBUG) {
             txtUserName.setText("frodriguezp");
             txtPws.setText("bogota1*");
-        }
-        else{
+        } else {
             txtUserName.setText("frodriguezp");
             txtPws.setText("bogota1*");
         }
@@ -76,6 +104,76 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private String getCurrentDeviceToken() {
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "getInstanceId failed", task.getException());
+                            return;
+                        }
+
+                        // Get new Instance ID token
+                        deviceToken = task.getResult().getToken();
+                        Log.d(TAG, deviceToken);
+                        // Log and toast
+                        @SuppressLint({"StringFormatInvalid", "LocalSuppress"}) String msg = getString(R.string.msg_token_fmt, deviceToken);
+                        Log.d(TAG, msg);
+                        //Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+                });
+        return "";
+    }
+
+    @RequiresApi(api = VERSION_CODES.KITKAT)
+    private void existLoginAutenticated() {
+
+        LoginViewModel loginViewModel = loginRepository.getLoginByUserName();
+
+        if (loginViewModel == null)
+            asyncLogin();
+        else {
+            updateLogin(loginViewModel);
+            data = loginViewModel;
+            Intent intent = null;
+            intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
+            GlobalClass.getInstance().setDocNumber(data.getNumero_Documento());
+            startActivity(intent);
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void validaUsertInfo() {
+
+        txtPws.setError(null);
+        txtUserName.setError(null);
+        String email = txtPws.getText().toString();
+        String password = txtUserName.getText().toString();
+
+        boolean cancel = false;
+        View focusView = null;
+
+        if (TextUtils.isEmpty(password)) {
+            txtPws.setError(getString(R.string.error_password_empty));
+            focusView = txtPws;
+            cancel = true;
+        }
+
+        if (TextUtils.isEmpty(email)) {
+            txtUserName.setError(getString(R.string.error_user_empty));
+            focusView = txtUserName;
+            cancel = true;
+        }
+
+        if (cancel) {
+            focusView.requestFocus();
+        } else {
+            asyncLogin();
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -111,30 +209,6 @@ public class LoginActivity extends AppCompatActivity {
 
             @SuppressLint("RestrictedApi")
             @Override
-            public void onFinish() {
-                super.onFinish();
-                if (!isError) {
-                    dialogo.hide();
-
-                    if (!data.getAuthenticated()) {
-                        showMessage(getString(R.string.autenticationError));
-                        return;
-                    }
-                    if (!data.getAuthorized()) {
-                        showMessage(getString(R.string.AutorizationError));
-                        return;
-                    }
-
-                    Intent intent = null;
-                    intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
-                    startActivity(intent);
-                } else
-                    dialogo.hide();
-
-            }
-
-            @SuppressLint("RestrictedApi")
-            @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
 
                 TypeToken<LoginViewModel> token = new TypeToken<LoginViewModel>() {
@@ -142,33 +216,40 @@ public class LoginActivity extends AppCompatActivity {
                 Gson gson = new GsonBuilder().create();
                 data = gson.fromJson(responseString, token.getType());
                 GlobalClass.getInstance().setDocNumber(data.getNumero_Documento());
-                isError= false;
+                isError = false;
+            }
+
+            @SuppressLint("RestrictedApi")
+            @Override
+            public void onFinish() {
+                super.onFinish();
+                if (!isError) {
+                    dialogo.hide();
+
+                    if (!data.isAuthenticated()) {
+                        showMessage(getString(R.string.autenticationError));
+                        return;
+                    }
+                    if (!data.isAuthorized()) {
+                        showMessage(getString(R.string.AutorizationError));
+                        return;
+                    }
+
+                    Intent intent = null;
+                    intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
+
+                    startActivity(intent);
+                    insertLogin(data);
+                } else
+                    dialogo.hide();
 
             }
         });
     }
 
-    private String getCurrentDeviceToken() {
-        FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
-
-                    @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                        if (!task.isSuccessful()) {
-                            Log.w(TAG, "getInstanceId failed", task.getException());
-                            return;
-                        }
-
-                        // Get new Instance ID token
-                        deviceToken = task.getResult().getToken();
-                        Log.d(TAG, deviceToken);
-                        // Log and toast
-                        @SuppressLint({"StringFormatInvalid", "LocalSuppress"}) String msg = getString(R.string.msg_token_fmt, deviceToken);
-                        Log.d(TAG, msg);
-                        //Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_SHORT).show();
-                    }
-                });
-        return "";
+    private void updateLogin(LoginViewModel loginViewModel) {
+        loginViewModel.setLastName(getCurrentDate());
+        loginRepository.updateLogin(loginViewModel);
     }
 
     private void showMessage(String res) {
@@ -188,64 +269,19 @@ public class LoginActivity extends AppCompatActivity {
         dlgAlert.create().show();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void validaUsertInfo() {
-
-        txtPws.setError(null);
-        txtUserName.setError(null);
-        String email = txtPws.getText().toString();
-        String password = txtUserName.getText().toString();
-
-        boolean cancel = false;
-        View focusView = null;
-
-        if (TextUtils.isEmpty(password)) {
-            txtPws.setError(getString(R.string.error_password_empty));
-            focusView = txtPws;
-            cancel = true;
-        }
-
-        if (TextUtils.isEmpty(email)) {
-            txtUserName.setError(getString(R.string.error_user_empty));
-            focusView = txtUserName;
-            cancel = true;
-        }
-
-        if (cancel) {
-            focusView.requestFocus();
-        } else {
-
-            //TODO SE DEJA EN COMENTARIO ESTA LINEA PARA EFECTOS DE PRUEBAS
-            asyncLogin();
-
-            //TODO, SOLO PARA PRUEBAS SIN CONEXION A BASE DE DATOS
-            //globalVariable.setUserName("PRUEBAS");
-            //globalVariable.setUserRole("ADMIN");
-            //Intent intent = null;
-            //intent = new Intent(LoginActivity.this,  MainActivity.class);
-            //startActivity(intent);
-        }
+    private void insertLogin(LoginViewModel data) {
+        String currentDate = getCurrentDate();
+        data.setLastLoginDate(currentDate);
+        loginRepository.insert(data);
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
-        getSupportActionBar().hide();
-
-        InitializaControls();
-
-        InitializaEvents();
-
-        FirebaseMessaging.getInstance().setAutoInitEnabled(true);
-        getCurrentDeviceToken();
-
-        if (android.os.Build.VERSION.SDK_INT > 9) {
-            StrictMode.ThreadPolicy policy = new
-                    StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
+    private String getCurrentDate() {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date date = new Date();
+        return formatter.format(date);
     }
+
+    private static final String TAG = "LoginActivity";
 
 
 }

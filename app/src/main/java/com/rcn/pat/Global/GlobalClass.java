@@ -85,12 +85,14 @@ public class GlobalClass extends Application {
 
         return outputDate;
     }
+
     public Date getCurrentTime() {
         SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
         Date date = new Date();
 
         return date;
     }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -104,4 +106,7 @@ public class GlobalClass extends Application {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
+
+
+
 }

@@ -46,6 +46,8 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.R;
+import com.rcn.pat.Repository.LocationRepository;
+import com.rcn.pat.Repository.ServiceRepository;
 import com.rcn.pat.ViewModels.LocationViewModel;
 import com.rcn.pat.ViewModels.ServiceInfo;
 

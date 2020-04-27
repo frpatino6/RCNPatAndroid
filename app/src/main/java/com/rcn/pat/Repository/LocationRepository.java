@@ -1,4 +1,4 @@
-package com.rcn.pat.Global;
+package com.rcn.pat.Repository;
 
 
 import android.content.Context;
@@ -6,6 +6,9 @@ import android.os.AsyncTask;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Room;
+
+import com.rcn.pat.Global.MyDataBase;
+import com.rcn.pat.Global.MyLocation;
 
 import java.util.List;
 

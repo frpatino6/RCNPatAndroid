@@ -1,99 +1,108 @@
 package com.rcn.pat.ViewModels;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+@Entity
 public class LoginViewModel {
+    private boolean Authenticated;
+    private boolean Authorized;
+    private String Correo_Electronico;
+    private String lastLoginDate;
+    private String Email;
+    @PrimaryKey(autoGenerate = true)
+    private long Id;
+    private String LastName;
     private String Login;
     private String Name;
-    private String LastName;
-    private String Id;
-    private String Email;
-    private boolean Authenticated;
-    private float idEmpresa;
-    private boolean Authorized;
     private String Numero_Documento;
-    private String Correo_Electronico;
+    private float idEmpresa;
 
-
-    // Getter Methods
-
-    public String getLogin() {
-        return Login;
+    public String getLastLoginDate() {
+        return lastLoginDate;
     }
 
-    public String getName() {
-        return Name;
+    public void setLastLoginDate(String lastLoginDate) {
+        this.lastLoginDate = lastLoginDate;
     }
 
-    public String getLastName() {
-        return LastName;
-    }
-
-    public String getId() {
-        return Id;
-    }
-
-    public String getEmail() {
-        return Email;
-    }
-
-    public boolean getAuthenticated() {
+    public boolean isAuthenticated() {
         return Authenticated;
     }
 
-    public float getIdEmpresa() {
-        return idEmpresa;
+    public void setAuthenticated(boolean authenticated) {
+        Authenticated = authenticated;
     }
 
-    public boolean getAuthorized() {
+    public boolean isAuthorized() {
         return Authorized;
     }
 
-    public String getNumero_Documento() {
-        return Numero_Documento;
+    public void setAuthorized(boolean authorized) {
+        Authorized = authorized;
     }
 
     public String getCorreo_Electronico() {
         return Correo_Electronico;
     }
 
-    // Setter Methods
-
-    public void setLogin(String Login) {
-        this.Login = Login;
+    public void setCorreo_Electronico(String correo_Electronico) {
+        Correo_Electronico = correo_Electronico;
     }
 
-    public void setName(String Name) {
-        this.Name = Name;
+    public String getEmail() {
+        return Email;
     }
 
-    public void setLastName(String LastName) {
-        this.LastName = LastName;
+    public void setEmail(String email) {
+        Email = email;
     }
 
-    public void setId(String Id) {
-        this.Id = Id;
+    public long getId() {
+        return Id;
     }
 
-    public void setEmail(String Email) {
-        this.Email = Email;
+    public void setId(long id) {
+        Id = id;
     }
 
-    public void setAuthenticated(boolean Authenticated) {
-        this.Authenticated = Authenticated;
+    public String getLastName() {
+        return LastName;
+    }
+
+    public void setLastName(String lastName) {
+        LastName = lastName;
+    }
+
+    public String getLogin() {
+        return Login;
+    }
+
+    public void setLogin(String login) {
+        Login = login;
+    }
+
+    public String getName() {
+        return Name;
+    }
+
+    public void setName(String name) {
+        Name = name;
+    }
+
+    public String getNumero_Documento() {
+        return Numero_Documento;
+    }
+
+    public void setNumero_Documento(String numero_Documento) {
+        Numero_Documento = numero_Documento;
+    }
+
+    public float getIdEmpresa() {
+        return idEmpresa;
     }
 
     public void setIdEmpresa(float idEmpresa) {
         this.idEmpresa = idEmpresa;
-    }
-
-    public void setAuthorized(boolean Authorized) {
-        this.Authorized = Authorized;
-    }
-
-    public void setNumero_Documento(String Numero_Documento) {
-        this.Numero_Documento = Numero_Documento;
-    }
-
-    public void setCorreo_Electronico(String Correo_Electronico) {
-        this.Correo_Electronico = Correo_Electronico;
     }
 }

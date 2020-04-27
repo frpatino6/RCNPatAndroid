@@ -21,7 +21,7 @@ import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.ServiceAdapter;
-import com.rcn.pat.Global.ServiceRepository;
+import com.rcn.pat.Repository.ServiceRepository;
 import com.rcn.pat.Global.SortbyDate;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.R;

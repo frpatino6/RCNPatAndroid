@@ -1,4 +1,4 @@
-package com.rcn.pat.Global;
+package com.rcn.pat.Repository;
 
 
 import android.content.Context;
@@ -6,6 +6,8 @@ import android.os.AsyncTask;
 
 import androidx.room.Room;
 
+import com.rcn.pat.Global.GlobalClass;
+import com.rcn.pat.Global.MyDataBase;
 import com.rcn.pat.ViewModels.ServiceInfo;
 
 import java.util.List;
