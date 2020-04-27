@@ -89,6 +89,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     private boolean stopService = false;
     private Timer timer;
     private TimerTask timerTask;
+    private boolean isMyServiceRunning;
 
     @Override
     public void onCreate() {
@@ -100,27 +101,37 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         currentService = serviceRepository.getStartetService();
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-
-
-        Bundle answerBundle = intent.getExtras();
-        if (intent.hasExtra("EndTask")) {
-            String ns = Context.NOTIFICATION_SERVICE;
-            endTask = answerBundle.getInt("EndTask");
-            NotificationManager nMgr = (NotificationManager) context.getSystemService(ns);
-            nMgr.cancelAll();
-        } else
-            endTask = -1;
-
-        if (endTask == 1) {
-           sendResult("EndTask");
-        } else {
-            StartForeground();
-            buildGoogleApiClient();
-            startTimer();
-            this.requestLocationUpdate();
+        if (intent.hasExtra("isMyServiceRunning")) {
+            isMyServiceRunning = intent.getBooleanExtra("isMyServiceRunning", false);
         }
+        if (!isMyServiceRunning) {
+            Bundle answerBundle = intent.getExtras();
+            if (intent.hasExtra("EndTask")) {
+                String ns = Context.NOTIFICATION_SERVICE;
+                endTask = answerBundle.getInt("EndTask");
+                NotificationManager nMgr = (NotificationManager) context.getSystemService(ns);
+                nMgr.cancelAll();
+            } else
+                endTask = -1;
+
+            if (endTask == 1) {
+                sendResult("EndTask");
+            } else {
+                StartForeground();
+                buildGoogleApiClient();
+                startTimer();
+                this.requestLocationUpdate();
+            }
+
+        } else if (intent.hasExtra("SendTrace")) {
+            String sendTrace = intent.getStringExtra("SendTrace");
+            if (sendTrace.equals("1"))
+                asyncLocations();
+        }
+
         return START_STICKY;
     }
 
@@ -308,19 +319,20 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         Gson json = new Gson();
 
         ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
-
-        for (MyLocation myLocation : result) {
-            locationViewModels.add(
-                    new LocationViewModel(
-                            String.valueOf(myLocation.getLatitude())
-                            , String.valueOf(myLocation.getLongitude())
-                            , myLocation.getTimeRead()
-                            , GlobalClass.getInstance().getCurrentService().getId()
-                            , stopService ? -1 : GlobalClass.getInstance().getCurrentService().getPausedId()));
-        }
+        if (result != null)
+            for (MyLocation myLocation : result) {
+                locationViewModels.add(
+                        new LocationViewModel(
+                                String.valueOf(myLocation.getLatitude())
+                                , String.valueOf(myLocation.getLongitude())
+                                , myLocation.getTimeRead()
+                                , GlobalClass.getInstance().getCurrentService().getId()
+                                ,  GlobalClass.getInstance().getCurrentService().getPausedId()));
+            }
         String resultJson = json.toJson(locationViewModels);
 
         entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
+        locationRepository.deleteAllLocation();
         client.post(context, url, entity, tipo, new TextHttpResponseHandler() {
 
             @Override
@@ -345,7 +357,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
             @Override
             public void onSuccess(int statusCode, Header[] headers, String responseString) {
                 Log.i(TAG, "Sended locations " + result.size());
-                locationRepository.deleteAllLocation();
+
             }
         });
     }
@@ -373,9 +385,9 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
-        mLocationRequest.setSmallestDisplacement(0.1F);
-        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setInterval(15000);
+        mLocationRequest.setSmallestDisplacement(5);
+        mLocationRequest.setFastestInterval(15000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();

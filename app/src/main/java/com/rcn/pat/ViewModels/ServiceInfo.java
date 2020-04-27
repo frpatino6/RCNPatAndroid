@@ -21,7 +21,7 @@ public class ServiceInfo {
     private String FechaPausa;
     private String FechaUltimaNotification;
     private Integer Id;
-    private Integer pausedId = 0;
+    private Integer pausedId = 1;
     private String NombreConductor;
     private String NombreModalidadServicio;
     private String NombreProveedor;
@@ -254,6 +254,7 @@ public class ServiceInfo {
     }
 
     public Integer getPausedId() {
+
         return pausedId;
     }
 

@@ -106,11 +106,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private PendingIntent pendingIntent;
 
     private final String TAG = "MainActivity";
+    private ProgressDialog _progresdialogo;
 
-    private void startForegroundServices() {
+    private void startForegroundServices(boolean paused) {
 
-        //if (!isMyServiceRunning(BackgroundLocationUpdateService.class))
-        Intent intent = new Intent(MainActivity.this, BackgroundLocationUpdateService.class);
+        intent = new Intent(MainActivity.this, BackgroundLocationUpdateService.class);
+        intent.putExtra("SendTrace", paused ? "1" : "0");
+        intent.putExtra("isMyServiceRunning", isMyServiceRunning(BackgroundLocationUpdateService.class));
         startService(intent);
     }
 
@@ -130,11 +132,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void asyncListPausaReasons() {
 
         try {
-            final ProgressDialog dialogo = new ProgressDialog(MainActivity.this);
-            dialogo.setMessage("Cargando lista de posibles causas......");
-            dialogo.setIndeterminate(false);
-            dialogo.setCancelable(false);
-            dialogo.show();
+            if (_progresdialogo == null)
+                _progresdialogo = new ProgressDialog(MainActivity.this);
+            _progresdialogo.setMessage("Cargando lista de posibles causas......");
+            _progresdialogo.setIndeterminate(false);
+            _progresdialogo.setCancelable(false);
+            _progresdialogo.show();
 
             String url = GlobalClass.getInstance().getUrlServices() + "lstPause";
             AsyncHttpClient client = new AsyncHttpClient();
@@ -144,13 +147,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             client.get(url, new TextHttpResponseHandler() {
                         @Override
                         public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
-                            dialogo.dismiss();
+                            _progresdialogo.dismiss();
                         }
 
                         @Override
                         public void onFinish() {
                             super.onFinish();
-                            dialogo.hide();
+                            _progresdialogo.hide();
 
                         }
 
@@ -212,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         serviceInfo.setFechaPausa(sdf.format(new Date()));
         serviceInfo.setPausedId(idPuase);
         serviceRepository.updateService(serviceInfo);
-        startForegroundServices();
+        startForegroundServices(true);
         toggleButtons();
 
     }
@@ -291,6 +294,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(DialogInterface dialog, int id) {
 
                 startTracking(true);
+                if (_progresdialogo != null)
+                    _progresdialogo.hide();
             }
         });
         dlgAlert.setNegativeButton(R.string.Texto_Boton_Cancel, new DialogInterface.OnClickListener() {
@@ -460,7 +465,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         } else
                             serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
 
-                        startForegroundServices();
+                        startForegroundServices(false);
                         toggleButtons();
                     }
 
@@ -567,8 +572,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 lblStart.setTextColor(Color.parseColor("#1ab394"));
                 btnStart.setTextColor(Color.parseColor("#1ab394"));
             }
-
-            statusTextView.setText((mTracking) ? "TRACKING" : "GPS Ready");
         }
         lblStop.setVisibility(btnStop.getVisibility());
         lblPause.setVisibility(btnPause.getVisibility());

@@ -134,9 +134,7 @@ public class LoginActivity extends AppCompatActivity {
 
         LoginViewModel loginViewModel = loginRepository.getLoginByUserName();
 
-        if (loginViewModel == null)
-            asyncLogin();
-        else {
+        if (loginViewModel != null) {
             updateLogin(loginViewModel);
             data = loginViewModel;
             Intent intent = null;
