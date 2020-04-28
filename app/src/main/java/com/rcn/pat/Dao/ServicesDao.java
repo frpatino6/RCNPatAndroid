@@ -8,6 +8,7 @@ import androidx.room.Update;
 
 import com.rcn.pat.ViewModels.ServiceInfo;
 
+import java.util.Date;
 import java.util.List;
 
 @Dao
@@ -38,6 +39,6 @@ public interface ServicesDao {
 
 
     @Query(" delete FROM ServiceInfo " +
-            " where strftime('%d', `FechaFinal`)< strftime('%d', date())")
+            " where strftime('%d', `FechaFinal`)< strftime('%d', DATE('now','localtime'))")
     void deleteOldServiceInfo();
 }
