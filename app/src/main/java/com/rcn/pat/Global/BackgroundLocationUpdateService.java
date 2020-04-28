@@ -453,6 +453,4 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     /* For Google Fused API */
     protected GoogleApiClient mGoogleApiClient;
     protected LocationSettingsRequest mLocationSettingsRequest;
-
-
 }
