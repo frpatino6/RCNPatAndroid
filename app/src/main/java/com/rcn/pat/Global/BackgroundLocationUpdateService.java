@@ -104,37 +104,38 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent.hasExtra("isMyServiceRunning")) {
-            isMyServiceRunning = intent.getBooleanExtra("isMyServiceRunning", false);
+
+        Bundle answerBundle = intent.getExtras();
+        if (intent.hasExtra("EndTask")) {
+            String ns = Context.NOTIFICATION_SERVICE;
+            endTask = answerBundle.getInt("EndTask");
+            NotificationManager nMgr = (NotificationManager) context.getSystemService(ns);
+            nMgr.cancelAll();
+        } else
+            endTask = -1;
+
+        if (endTask == 1) {
+            sendResult("EndTask");
+        } else {
+            StartForeground();
+            buildGoogleApiClient();
+            startTimer();
+            this.requestLocationUpdate();
         }
-        if (!isMyServiceRunning) {
-            Bundle answerBundle = intent.getExtras();
-            if (intent.hasExtra("EndTask")) {
-                String ns = Context.NOTIFICATION_SERVICE;
-                endTask = answerBundle.getInt("EndTask");
-                NotificationManager nMgr = (NotificationManager) context.getSystemService(ns);
-                nMgr.cancelAll();
-            } else
-                endTask = -1;
 
-            if (endTask == 1) {
-                sendResult("EndTask");
-            } else {
-                StartForeground();
-                buildGoogleApiClient();
-                startTimer();
-                this.requestLocationUpdate();
-            }
-
-        } else if (intent.hasExtra("SendTrace")) {
+        if (intent.hasExtra("SendTrace")) {
             String sendTrace = intent.getStringExtra("SendTrace");
             if (sendTrace.equals("1"))
-                asyncLocations();
+                if (GlobalClass.getInstance().isNetworkAvailable()) {
+                    if (result != null && result.size() > 0)
+                        asyncLocations();
+                }
         }
 
         return START_STICKY;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @SuppressLint("LongLogTag")
     @Override
     public void onDestroy() {
@@ -157,6 +158,11 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         return null;
     }
     /* For Google Fused API */
+
+    @Override
+    public void onRebind(Intent intent) {
+        super.onRebind(intent);
+    }
 
     private void StartForeground() {
         Intent intent = new Intent(context, MainActivity.class);
@@ -327,7 +333,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                                 , String.valueOf(myLocation.getLongitude())
                                 , myLocation.getTimeRead()
                                 , GlobalClass.getInstance().getCurrentService().getId()
-                                ,  GlobalClass.getInstance().getCurrentService().getPausedId()));
+                                , GlobalClass.getInstance().getCurrentService().getPausedId()));
             }
         String resultJson = json.toJson(locationViewModels);
 
@@ -386,7 +392,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(15000);
-        mLocationRequest.setSmallestDisplacement(5);
+        mLocationRequest.setSmallestDisplacement(1);
         mLocationRequest.setFastestInterval(15000);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
@@ -406,12 +412,11 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                 }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
+                Log.e(TAG_LOCATION, "GPS onFailure");
                 int statusCode = ((ApiException) e).getStatusCode();
                 switch (statusCode) {
                     case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-
                         sendResult("");
-
                         break;
                     case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
                         Log.e(TAG_LOCATION, "Location settings are inadequate, and cannot be fixed here. Fix in Settings.");

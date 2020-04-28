@@ -255,6 +255,8 @@ public class ServiceInfo {
 
     public Integer getPausedId() {
 
+        if (!isStoped && pausedId == 0)
+            pausedId = 1;
         return pausedId;
     }
 

@@ -2,6 +2,7 @@ package com.rcn.pat.Activities;
 
 import android.Manifest;
 import android.Manifest.permission;
+import android.annotation.SuppressLint;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
@@ -57,13 +58,17 @@ import com.rcn.pat.Global.BackgroundService;
 import com.rcn.pat.Global.CustomListViewDialog;
 import com.rcn.pat.Global.DataAdapter;
 import com.rcn.pat.Global.GlobalClass;
+import com.rcn.pat.Global.MyLocation;
+import com.rcn.pat.Repository.LocationRepository;
 import com.rcn.pat.Repository.ServiceRepository;
 import com.rcn.pat.Global.SyncDataService;
 import com.rcn.pat.Notifications.PatFirebaseService;
 import com.rcn.pat.R;
+import com.rcn.pat.ViewModels.LocationViewModel;
 import com.rcn.pat.ViewModels.PausaReasons;
 import com.rcn.pat.ViewModels.ServiceInfo;
 
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -73,6 +78,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 import cz.msebera.android.httpclient.Header;
+import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -107,13 +113,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private final String TAG = "MainActivity";
     private ProgressDialog _progresdialogo;
+    private List<MyLocation> result;
 
     private void startForegroundServices(boolean paused) {
 
-        intent = new Intent(MainActivity.this, BackgroundLocationUpdateService.class);
-        intent.putExtra("SendTrace", paused ? "1" : "0");
-        intent.putExtra("isMyServiceRunning", isMyServiceRunning(BackgroundLocationUpdateService.class));
-        startService(intent);
+        if (!isMyServiceRunning(BackgroundLocationUpdateService.class)) {
+            intent = new Intent(MainActivity.this, BackgroundLocationUpdateService.class);
+            intent.putExtra("SendTrace", paused ? "1" : "0");
+            startService(intent);
+        }
     }
 
     private void stopForegroundServices() {
@@ -185,6 +193,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void setPauseReasonsDialog() {
         DataAdapter dataAdapter = new DataAdapter(dataPausaReasons, new DataAdapter.RecyclerViewItemClickListener() {
+            @RequiresApi(api = VERSION_CODES.KITKAT)
             @Override
             public void clickOnItem(PausaReasons data) {
                 customDialog.dismiss();
@@ -199,6 +208,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    @RequiresApi(api = VERSION_CODES.KITKAT)
     private void pauseService(SimpleDateFormat sdf, int idPuase) {
         GlobalClass.getInstance().getCurrentService().setPaused(true);
         GlobalClass.getInstance().getCurrentService().setStarted(false);
@@ -215,7 +225,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         serviceInfo.setFechaPausa(sdf.format(new Date()));
         serviceInfo.setPausedId(idPuase);
         serviceRepository.updateService(serviceInfo);
-        startForegroundServices(true);
+
+        if (GlobalClass.getInstance().isNetworkAvailable())
+            asyncLocations();
+
         toggleButtons();
 
     }
@@ -454,10 +467,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         ServiceInfo serviceInfo = serviceRepository.getStartetService();
                         if (isStarted) {
                             if (serviceInfo != null) {
-                                serviceInfo.setPausedId(0);
+                                serviceInfo.setPausedId(1);
                                 serviceRepository.updateService(serviceInfo);
                             }
                             GlobalClass.getInstance().getCurrentService().setStarted(true);
+                            GlobalClass.getInstance().getCurrentService().setPausedId(1);
                         }
                         if (GlobalClass.getInstance().getCurrentService().getIdService() > 0) {
                             GlobalClass.getInstance().getCurrentService().setFechaPausa("");
@@ -536,6 +550,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         GlobalClass.getInstance().getCurrentService().setStarted(false);
         GlobalClass.getInstance().getCurrentService().setPaused(false);
         GlobalClass.getInstance().getCurrentService().setStoped(true);
+        GlobalClass.getInstance().getCurrentService().setPausedId(0);
         serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
         serviceRepository.deleteAllService();
         stopBackgroundServices();
@@ -817,7 +832,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 Log.i(TAG, "ValidateIfAutoStartTrace " + diff);
                 if (diff >= 1) {
                     Log.i(TAG, "Pausing service ");
-                    pauseService(sdf, 1);
+                    pauseService(sdf, 2);
                     sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
                     showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
                 }
@@ -922,17 +937,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 new IntentFilter(PatFirebaseService.SERVICE_RESULT));
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        //stopBackgroundServices();
-    }
-
     private void initializaData() {
         int id = GlobalClass.getInstance().getCurrentService().getId();
         // busca si tiene en la base de datos local un servicio activo o pausado
@@ -965,5 +969,63 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         lblPause.setVisibility(btnPause.getVisibility());
         lblStart.setVisibility(btnStart.getVisibility());
         blockService = true;
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void asyncLocations() {
+
+        LocationRepository locationRepository = new LocationRepository(getApplicationContext());
+        result = locationRepository.getLocations();
+        Log.i("Enviando posiciones", "ifrom activity " + result.size());
+        String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.setTimeout(60000);
+        String tipo = "application/json";
+
+        StringEntity entity;
+        Gson json = new Gson();
+
+        ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
+        if (result != null)
+            for (MyLocation myLocation : result) {
+                locationViewModels.add(
+                        new LocationViewModel(
+                                String.valueOf(myLocation.getLatitude())
+                                , String.valueOf(myLocation.getLongitude())
+                                , myLocation.getTimeRead()
+                                , GlobalClass.getInstance().getCurrentService().getId()
+                                , GlobalClass.getInstance().getCurrentService().getPausedId()));
+            }
+        String resultJson = json.toJson(locationViewModels);
+
+        entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
+        locationRepository.deleteAllLocation();
+        client.post(MainActivity.this, url, entity, tipo, new TextHttpResponseHandler() {
+
+            @Override
+            public boolean getUseSynchronousMode() {
+                return false;
+            }
+
+            @SuppressLint("RestrictedApi")
+            @Override
+            public void onFinish() {
+
+
+            }
+
+            @SuppressLint("LongLogTag")
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
+                Log.i(TAG, "ERROR Locations sended: " + responseBody + "  " + error.getMessage());
+            }
+
+            @SuppressLint({"RestrictedApi", "LongLogTag"})
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                Log.i(TAG, "Sended locations " + result.size());
+
+            }
+        });
     }
 }
