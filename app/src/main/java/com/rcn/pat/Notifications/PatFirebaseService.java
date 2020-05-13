@@ -36,7 +36,7 @@ public class PatFirebaseService extends FirebaseMessagingService {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private void createNotification(String remoteMessage, String title) {
+    private void createNotification() {
 
         if (notificationManager == null)
             notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -69,8 +69,8 @@ public class PatFirebaseService extends FirebaseMessagingService {
         createNotificationChannel();
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, nIntent, 0);
         Notification notiBuilder = new NotificationCompat.Builder(this, "channel_01")
-                .setContentTitle(title)
-                .setContentText(remoteMessage)
+                .setContentTitle("PAT")
+                .setContentText("Servicio actualizado")
                 .setSmallIcon(R.drawable.icon)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -131,7 +131,7 @@ public class PatFirebaseService extends FirebaseMessagingService {
         // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
         Log.d(TAG, "From: " + remoteMessage.getFrom());
         //sendNotification(remoteMessage);
-        createNotification(remoteMessage.getData().values().toArray()[1].toString(), remoteMessage.getData().values().toArray()[2].toString());
+        createNotification();
         // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
             Log.d(TAG, "Message data payload: " + remoteMessage.getData());

@@ -391,9 +391,11 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
     @Override
     public void onConnected(@Nullable Bundle bundle) {
         mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(15000);
+        mLocationRequest.setInterval(5000);
         mLocationRequest.setSmallestDisplacement(1);
-        mLocationRequest.setFastestInterval(15000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setMaxWaitTime(5000);
+        mLocationRequest.setSmallestDisplacement(3);
         mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();

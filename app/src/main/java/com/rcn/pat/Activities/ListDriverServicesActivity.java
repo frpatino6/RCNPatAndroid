@@ -1,11 +1,16 @@
 package com.rcn.pat.Activities;
 
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.provider.Settings;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,8 +24,10 @@ import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.TextHttpResponseHandler;
+import com.rcn.pat.Global.BackgroundLocationUpdateService;
 import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.ServiceAdapter;
+import com.rcn.pat.Notifications.PatFirebaseService;
 import com.rcn.pat.Repository.ServiceRepository;
 import com.rcn.pat.Global.SortbyDate;
 import com.rcn.pat.Global.onClickVIewDetail;
@@ -35,7 +42,7 @@ import java.util.List;
 import cz.msebera.android.httpclient.Header;
 
 public class ListDriverServicesActivity extends AppCompatActivity {
-
+    private BroadcastReceiver broadcastReceiverFirebase;
     private ServiceAdapter adapter;
     private ArrayList<ServiceInfo> data;
     private ArrayList<PausaReasons> dataPausaReasons;
@@ -70,6 +77,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                     public void onFinish() {
                         super.onFinish();
                         dialogo.hide();
+                        dialogo.dismiss();
                         swipeRefreshLayout.setRefreshing(false);
                     }
 
@@ -142,7 +150,22 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                 asyncListProductions(false);
             }
         });
-
+        broadcastReceiverFirebase = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
+                //Actualiza la informaci[on del servicio
+                asyncListProductions(true);
+            }
+        };
         asyncListProductions(true);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
+                new IntentFilter(PatFirebaseService.SERVICE_RESULT));
     }
 }

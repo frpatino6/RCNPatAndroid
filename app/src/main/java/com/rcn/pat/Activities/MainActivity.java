@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public Intent intent;
     public boolean mTracking = false;
     private final String TAG = "MainActivity";
+    private AlertDialog.Builder alert;
     private boolean blockService = false;
     private BroadcastReceiver broadcastReceiver;
     private BroadcastReceiver broadcastReceiverBackgroundService;
@@ -219,53 +220,59 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void asyncServiceInfoById() {
-        final ProgressDialog dialogo = new ProgressDialog(MainActivity.this);
-        dialogo.setMessage("Actualizando datos del servicio...");
-        dialogo.setIndeterminate(false);
-        dialogo.setCancelable(false);
-        dialogo.show();
+        try {
+            final ProgressDialog dialogo = new ProgressDialog(MainActivity.this);
+            dialogo.setMessage("Actualizando datos del servicio...");
+            dialogo.setIndeterminate(false);
+            dialogo.setCancelable(false);
+            dialogo.show();
 
-        String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver/" + GlobalClass.getInstance().getCurrentService().getId().toString();
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(60000);
-        RequestParams params = new RequestParams();
+            String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver/" + GlobalClass.getInstance().getCurrentService().getId().toString();
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.setTimeout(60000);
+            RequestParams params = new RequestParams();
 
-        client.get(url, new TextHttpResponseHandler() {
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
-
-
-                    }
-
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, String res) {
-                        // called when response HTTP status is "200 OK"
-                        try {
-
-                            int a = 0;
-                            TypeToken<ServiceInfo> token = new TypeToken<ServiceInfo>() {
-                            };
-                            Gson gson = new GsonBuilder().create();
-                            // Define Response class to correspond to the JSON response returned
-                            ServiceInfo data = gson.fromJson(res, token.getType());
-                            GlobalClass.getInstance().setCurrentService(data);
-                            initializaValues();
+            client.get(url, new TextHttpResponseHandler() {
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
 
 
-                        } catch (JsonSyntaxException e) {
-                            e.printStackTrace();
+                        }
+
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers, String res) {
+                            // called when response HTTP status is "200 OK"
+                            try {
+
+                                int a = 0;
+                                TypeToken<ServiceInfo> token = new TypeToken<ServiceInfo>() {
+                                };
+                                Gson gson = new GsonBuilder().create();
+                                // Define Response class to correspond to the JSON response returned
+                                ServiceInfo data = gson.fromJson(res, token.getType());
+                                GlobalClass.getInstance().setCurrentService(data);
+                                serviceRepository.updateService(data);
+                                initializaValues();
+
+
+                            } catch (JsonSyntaxException e) {
+                                e.printStackTrace();
+
+                            }
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            super.onFinish();
+                            dialogo.hide();
+                            dialogo.dismiss();
 
                         }
                     }
+            );
+        } catch (Exception ex) {
 
-                    @Override
-                    public void onFinish() {
-                        super.onFinish();
-                        dialogo.hide();
-
-                    }
-                }
-        );
+        }
     }
 
     private void confirmCausePauseDialog() {
@@ -811,7 +818,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void showConfirmDialog(String contentMessage) {
         // Use the Builder class for convenient dialog construction
         try {
-            AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+            alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Confirmación");
             alert.setMessage(contentMessage);
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
@@ -819,6 +826,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
+
                 }
             });
             alert.show();
@@ -940,8 +948,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int id = GlobalClass.getInstance().getCurrentService().getId();
         // busca si tiene en la base de datos local un servicio activo o pausado
         ServiceInfo serviceInfo = serviceRepository.getStartetService();
-
-
         if (serviceInfo == null) {
             toggleButtons();
             return;
