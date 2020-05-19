@@ -236,6 +236,8 @@ public class LoginActivity extends AppCompatActivity {
                     Intent intent = null;
                     intent = new Intent(LoginActivity.this, ListDriverServicesActivity.class);
 
+                    intent.putExtra("token", deviceToken);
+                    intent.putExtra("Plataforma", "android");
                     startActivity(intent);
                     insertLogin(data);
                 } else

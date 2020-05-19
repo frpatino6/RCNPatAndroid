@@ -10,7 +10,7 @@ import com.rcn.pat.ViewModels.LoginViewModel;
 import com.rcn.pat.ViewModels.ServiceInfo;
 import com.rcn.pat.Dao.ServicesDao;
 
-@Database(entities = {MyLocation.class, ServiceInfo.class, LoginViewModel.class}, version = 8, exportSchema = false)
+@Database(entities = {MyLocation.class, ServiceInfo.class, LoginViewModel.class}, version = 9, exportSchema = false)
 public abstract class MyDataBase extends RoomDatabase {
     public abstract LocationDao dao();
     public abstract ServicesDao servicesDao();

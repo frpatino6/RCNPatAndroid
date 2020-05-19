@@ -56,11 +56,12 @@ public class LocationViewModel {
         this.id = id;
     }
 
-    public LocationViewModel(String latitude, String longitude, String fechaHora, Integer id, int idMotivoPausa) {
+    public LocationViewModel(String latitude, String longitude, String fechaHora, Integer id, int idMotivoPausa, String obs) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.fechaHora = fechaHora;
         this.id = id;
         this.idMotivoPausa=idMotivoPausa;
+        this.observaciones= obs;
     }
 }

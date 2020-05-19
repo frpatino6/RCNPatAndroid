@@ -38,7 +38,34 @@ public class ServiceInfo {
     private boolean isStoped = true;
     private boolean ishourNotify = false;
     private boolean ishalfhourNotify = false;
+    private int lastIdMotivoPausa;
+    private String lastLatitude;
+    private String lastLongitude;
     private int minutesAfter = 15;//Cantidad de minutos despues de la hora de finalización del servicio para notificar
+
+    public int getLastIdMotivoPausa() {
+        return lastIdMotivoPausa;
+    }
+
+    public void setLastIdMotivoPausa(int lastIdMotivoPausa) {
+        this.lastIdMotivoPausa = lastIdMotivoPausa;
+    }
+
+    public String getLastLatitude() {
+        return lastLatitude;
+    }
+
+    public void setLastLatitude(String lastLatitude) {
+        this.lastLatitude = lastLatitude;
+    }
+
+    public String getLastLongitude() {
+        return lastLongitude;
+    }
+
+    public void setLastLongitude(String lastLongitude) {
+        this.lastLongitude = lastLongitude;
+    }
 
     public String getFechaUltimaNotification() {
         return FechaUltimaNotification;
@@ -237,7 +264,7 @@ public class ServiceInfo {
     public void setStarted(boolean started) {
 
         isStarted = started;
-        pausedId = 0;
+//        pausedId = 0;
         if (isStarted) {
             this.isPaused = false;
             this.isStoped = false;

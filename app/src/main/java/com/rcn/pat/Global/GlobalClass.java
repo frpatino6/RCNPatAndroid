@@ -58,6 +58,7 @@ public class GlobalClass extends Application {
     }
 
     public ServiceInfo getCurrentService() {
+
         return currentService;
     }
 

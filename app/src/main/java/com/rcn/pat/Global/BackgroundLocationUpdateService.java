@@ -17,6 +17,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -98,7 +99,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         locationRepository = new LocationRepository(getApplicationContext());
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
         serviceRepository = new ServiceRepository(getApplicationContext());
-        currentService = serviceRepository.getStartetService();
+
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -256,6 +257,15 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                 Intent intent = new Intent(SERVICE_RESULT);
                 intent.putExtra(SERVICE_MESSAGE, String.valueOf(location.getSpeed()));
                 localBroadcastManager.sendBroadcast(intent);
+                currentService = serviceRepository.getStartetService();
+                if(currentService!=null) {
+                    currentService.setLastLatitude(latitude);
+                    currentService.setLastLongitude(longitude);
+                    serviceRepository.updateService(currentService);
+                }
+                Toast toast=Toast.makeText(getApplicationContext(), "Latitud: " + latitude.toString() + " Logintud: " + longitude,Toast.LENGTH_LONG);
+                toast.setMargin(50,50);
+                toast.show();
             }
             Log.d(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude() + " Speed : " + location.getSpeed());
         }
@@ -324,7 +334,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
         StringEntity entity;
         Gson json = new Gson();
 
-        ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
+        final ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
         if (result != null)
             for (MyLocation myLocation : result) {
                 locationViewModels.add(
@@ -333,7 +343,7 @@ public class BackgroundLocationUpdateService extends Service implements GoogleAp
                                 , String.valueOf(myLocation.getLongitude())
                                 , myLocation.getTimeRead()
                                 , GlobalClass.getInstance().getCurrentService().getId()
-                                , GlobalClass.getInstance().getCurrentService().getPausedId()));
+                                , currentService.getPausedId(),""));
             }
         String resultJson = json.toJson(locationViewModels);
 

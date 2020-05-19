@@ -12,7 +12,26 @@ public class MyLocation {
     private double latitude;
     private double longitude;
     private long time;
+    private String observaciones="";
     private String timeRead;
+
+
+    public MyLocation() {
+    }
+
+    public MyLocation(double latitude, double longitude, int id) {
+        this.id = id;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
 
     public String getTimeRead() {
         return timeRead;

@@ -110,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView lblPhone;
     private TextView lblStart;
     private TextView lblStop;
+    private LocationRepository locationRepository;
     private SyncDataService mSensorService;
     private Intent mServiceIntent;
     private AlarmManager manager;
@@ -181,8 +182,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void clickOnItem(PausaReasons data) {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                ServiceInfo serviceInfo = serviceRepository.getStartetService();
-                pauseService(sdf, data.getId());
+                pauseService(sdf, data.getId(), "");
                 customDialog.dismiss();
                 dialogo.dismiss();
                 dialogo.hide();
@@ -195,11 +195,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     @RequiresApi(api = VERSION_CODES.KITKAT)
-    private void pauseService(SimpleDateFormat sdf, int idPuase) {
+    private void pauseService(SimpleDateFormat sdf, int idPause, String obs) {
         GlobalClass.getInstance().getCurrentService().setPaused(true);
         GlobalClass.getInstance().getCurrentService().setStarted(false);
         GlobalClass.getInstance().getCurrentService().setStoped(false);
         GlobalClass.getInstance().getCurrentService().setFechaPausa(sdf.format(new Date()));
+        GlobalClass.getInstance().getCurrentService().setPausedId(idPause);
         ServiceInfo serviceInfo = serviceRepository.getStartetService();
 
         if (serviceInfo == null)
@@ -209,14 +210,41 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         serviceInfo.setStarted(false);
         serviceInfo.setStoped(false);
         serviceInfo.setFechaPausa(sdf.format(new Date()));
-        serviceInfo.setPausedId(idPuase);
+        serviceInfo.setPausedId(idPause);
         serviceRepository.updateService(serviceInfo);
-
+        sendLastLocation(serviceInfo, obs);
         if (GlobalClass.getInstance().isNetworkAvailable())
             asyncLocations();
 
         toggleButtons();
 
+    }
+
+    private void sendLastLocation(ServiceInfo serviceInfo, String obs) {
+        try {
+
+            if (serviceInfo != null && serviceInfo.getLastLatitude() != null) {
+                MyLocation MyLocation = new MyLocation(Double.valueOf(serviceInfo.getLastLatitude()), Double.valueOf(serviceInfo.getLastLongitude()), serviceInfo.getId());
+                MyLocation.setTimeRead(gettime());
+                MyLocation.setObservaciones(obs);
+                locationRepository.insertLocation(MyLocation);
+            }
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private String gettime() {
+        SimpleDateFormat sdf = null;
+        try {
+            sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return sdf.format(new Date());
     }
 
     private void asyncServiceInfoById() {
@@ -313,16 +341,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void confirmStopService() {
         AlertDialog.Builder dlgAlert = new AlertDialog.Builder(MainActivity.this);
-
+        dlgAlert.setCancelable(false);
         dlgAlert.setMessage("¿Seguro de detener el servicio?");
         dlgAlert.setTitle(getString(R.string.app_name));
         //dlgAlert.setPositiveButton(getString(R.string.Texto_Boton_Ok), null);
         dlgAlert.setPositiveButton(R.string.Texto_Boton_Ok, new DialogInterface.OnClickListener() {
+            @RequiresApi(api = VERSION_CODES.KITKAT)
             public void onClick(DialogInterface dialog, int id) {
                 GlobalClass.getInstance().getCurrentService().setPaused(false);
                 GlobalClass.getInstance().getCurrentService().setStarted(false);
                 GlobalClass.getInstance().getCurrentService().setStoped(true);
-                stopTracking();
+                stopTracking(false);
 
             }
         });
@@ -332,7 +361,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 dialog.dismiss();
             }
         });
-        dlgAlert.setCancelable(true);
+
         dlgAlert.create().show();
     }
 
@@ -361,6 +390,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStop.setTypeface(typeface);
         fontTextView2.setTypeface(typeface);
         serviceRepository = new ServiceRepository(getApplicationContext());
+        locationRepository = new LocationRepository(getApplicationContext());
 
     }
 
@@ -467,6 +497,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @RequiresApi(api = VERSION_CODES.KITKAT)
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
@@ -474,7 +505,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 startTracking(true);
                 break;
             case R.id.stopButton:
-                stopTracking();
+                stopTracking(false);
                 break;
         }
     }
@@ -483,6 +514,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Dexter.withActivity(this)
                 .withPermission(Manifest.permission.ACCESS_FINE_LOCATION)
                 .withListener(new PermissionListener() {
+                    @RequiresApi(api = VERSION_CODES.KITKAT)
                     @Override
                     public void onPermissionGranted(PermissionGrantedResponse response) {
                         ServiceInfo serviceInfo = serviceRepository.getStartetService();
@@ -496,9 +528,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }
                         if (GlobalClass.getInstance().getCurrentService().getIdService() > 0) {
                             GlobalClass.getInstance().getCurrentService().setFechaPausa("");
+
                             serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
                         } else
                             serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
+
+                        sendLastLocation(serviceInfo, "");
+                        asyncLocations();
                         startForegroundServices(false);
                         toggleButtons();
                     }
@@ -543,18 +579,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    public void stopTracking() {
+    @RequiresApi(api = VERSION_CODES.KITKAT)
+    public void stopTracking(boolean isAtomaticStoped) {
+        String observations = "";
         mTracking = false;
-
+        ServiceInfo currentServiceInfo = serviceRepository.getStartetService();
         GlobalClass.getInstance().getCurrentService().setStarted(false);
         GlobalClass.getInstance().getCurrentService().setPaused(false);
         GlobalClass.getInstance().getCurrentService().setStoped(true);
-        GlobalClass.getInstance().getCurrentService().setPausedId(0);
+        GlobalClass.getInstance().getCurrentService().setPausedId(2);
         serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+
+        if (isAtomaticStoped)
+            observations = "Servicio finalizado automáticamente";
+
+        sendLastLocation(currentServiceInfo, observations);
+        asyncLocations();
         serviceRepository.deleteAllService();
         stopBackgroundServices();
         finish();
-
     }
 
     private void startForegroundServices(boolean paused) {
@@ -652,8 +695,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     // Preguntando al usuario, si desea finalizar el servicio, ya que la hora ha sido superada
 
                     //Pregunta si el servicio está inactivo, si esta inactivo es porque se encuentra visualizando un servicio que no es el que está activo
-
-
                     if (blockService)
                         return;
                     else {
@@ -663,7 +704,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         try {
                             String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
                             if (speed.equals("EndTask")) {
-                                stopTracking();
+                                stopTracking(true);
                                 return;
                             }
                             //Si la velocidad es superior a 4 kms/h inicia automaticamente el servicio.
@@ -723,7 +764,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 endTask = -1;
 
             if (endTask == 1) {
-                stopTracking();
+                stopTracking(true);
 
             }
 
@@ -788,6 +829,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Confirmación");
+            alert.setCancelable(false);
             alert.setMessage(contentMessage);
             alert.setPositiveButton("Si", new DialogInterface.OnClickListener() {
 
@@ -801,9 +843,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             alert.setNegativeButton("No", new DialogInterface.OnClickListener() {
 
+                @RequiresApi(api = VERSION_CODES.KITKAT)
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    stopTracking();
+
+                    serviceRepository.updateService(serviceInfo);
+                    stopTracking(true);
                     dialog.dismiss();
                 }
             });
@@ -820,6 +865,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         try {
             alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Confirmación");
+            alert.setCancelable(false);
             alert.setMessage(contentMessage);
             alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
 
@@ -839,7 +885,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //Valida si se debe iniciar automáticamente la traza
     @RequiresApi(api = VERSION_CODES.KITKAT)
     private void ValidateIfAutoPauseTrace(ServiceInfo serviceInfo) {
-        Log.i(TAG, "ValidateIfAutoStartTrace ");
+        Log.i(TAG, "ValidateIfAutoPauseTrace ");
         String srPauseDate = serviceInfo.getFechaPausa();
         Date currentDate = new Date();
         try {
@@ -854,9 +900,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 long diffInMillies = Math.abs(Objects.requireNonNull(dtPauseDate).getTime() - currentDate.getTime());
                 long diff = diffInMillies / (60 * 1000);
                 Log.i(TAG, "ValidateIfAutoStartTrace " + diff);
-                if (diff >= 5) {
+                if (diff >= 1) {
                     Log.i(TAG, "Pausing service ");
-                    pauseService(sdf, 2);
+                    pauseService(sdf, 2, "Servicio pausado automáticamente");
                     sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
                     showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
                 }
@@ -979,7 +1025,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void asyncLocations() {
 
-        LocationRepository locationRepository = new LocationRepository(getApplicationContext());
         result = locationRepository.getLocations();
         Log.i("Enviando posiciones", "ifrom activity " + result.size());
         String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
@@ -999,7 +1044,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 , String.valueOf(myLocation.getLongitude())
                                 , myLocation.getTimeRead()
                                 , GlobalClass.getInstance().getCurrentService().getId()
-                                , GlobalClass.getInstance().getCurrentService().getPausedId()));
+                                , GlobalClass.getInstance().getCurrentService().getPausedId()
+                                , myLocation.getObservaciones()
+                        ));
             }
         String resultJson = json.toJson(locationViewModels);
 
