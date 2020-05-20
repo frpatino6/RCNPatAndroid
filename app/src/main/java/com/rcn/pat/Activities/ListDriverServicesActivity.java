@@ -58,6 +58,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private static final String TAG = "LoginActivity";
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -91,66 +92,68 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private void asyncListProductions(boolean showProgress) {
 
 
-        if (showProgress) {
-            dialogo = new ProgressDialog(ListDriverServicesActivity.this);
-            dialogo.setMessage("Cargando servicios...");
-            dialogo.setIndeterminate(false);
-            dialogo.setCancelable(false);
-            dialogo.show();
-        }
-        String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver?NoDocumento=" + GlobalClass.getInstance().getDocNumber() + "&Token=" + deviceToken + "&Plataforma=android";
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(60000);
-        RequestParams params = new RequestParams();
+        if (GlobalClass.getInstance().isNetworkAvailable()) {
+            if (showProgress) {
+                dialogo = new ProgressDialog(ListDriverServicesActivity.this);
+                dialogo.setMessage("Cargando servicios...");
+                dialogo.setIndeterminate(false);
+                dialogo.setCancelable(false);
+                dialogo.show();
+            }
+            String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver?NoDocumento=" + GlobalClass.getInstance().getDocNumber() + "&Token=" + deviceToken + "&Plataforma=android";
+            AsyncHttpClient client = new AsyncHttpClient();
+            client.setTimeout(60000);
+            RequestParams params = new RequestParams();
 
-        client.get(url, new TextHttpResponseHandler() {
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
+            client.get(url, new TextHttpResponseHandler() {
+                        @Override
+                        public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
 
-
-                    }
-
-                    @Override
-                    public void onSuccess(int statusCode, Header[] headers, String res) {
-                        // called when response HTTP status is "200 OK"
-                        try {
-
-                            int a = 0;
-                            TypeToken<List<ServiceInfo>> token = new TypeToken<List<ServiceInfo>>() {
-                            };
-                            Gson gson = new GsonBuilder().create();
-                            // Define Response class to correspond to the JSON response returned
-                            data = gson.fromJson(res, token.getType());
-
-                            Collections.sort(data, new SortbyDate());
-
-                            GlobalClass.getInstance().setListServicesDriver(data);
-                            adapter = new ServiceAdapter(data, new onClickVIewDetail() {
-                                @Override
-                                public void onClick(ServiceInfo idServicio) {
-                                    Log.i(TAG, "SERVICIO SELECCIONADO: " + idServicio.getId().toString());
-                                    goDetailService(idServicio);
-                                }
-                            });
-                            recyclerView.setAdapter(adapter);
-                            deleteOldServices();
-
-
-                        } catch (JsonSyntaxException e) {
-                            e.printStackTrace();
 
                         }
-                    }
 
-                    @Override
-                    public void onFinish() {
-                        super.onFinish();
-                        dialogo.hide();
-                        dialogo.dismiss();
-                        swipeRefreshLayout.setRefreshing(false);
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers, String res) {
+                            // called when response HTTP status is "200 OK"
+                            try {
+
+                                int a = 0;
+                                TypeToken<List<ServiceInfo>> token = new TypeToken<List<ServiceInfo>>() {
+                                };
+                                Gson gson = new GsonBuilder().create();
+                                // Define Response class to correspond to the JSON response returned
+                                data = gson.fromJson(res, token.getType());
+
+                                Collections.sort(data, new SortbyDate());
+
+                                GlobalClass.getInstance().setListServicesDriver(data);
+                                adapter = new ServiceAdapter(data, new onClickVIewDetail() {
+                                    @Override
+                                    public void onClick(ServiceInfo idServicio) {
+                                        Log.i(TAG, "SERVICIO SELECCIONADO: " + idServicio.getId().toString());
+                                        goDetailService(idServicio);
+                                    }
+                                });
+                                recyclerView.setAdapter(adapter);
+                                deleteOldServices();
+
+
+                            } catch (JsonSyntaxException e) {
+                                e.printStackTrace();
+
+                            }
+                        }
+
+                        @Override
+                        public void onFinish() {
+                            super.onFinish();
+                            dialogo.hide();
+                            dialogo.dismiss();
+                            swipeRefreshLayout.setRefreshing(false);
+                        }
                     }
-                }
-        );
+            );
+        }
     }
 
     private void goDetailService(ServiceInfo idServicio) {

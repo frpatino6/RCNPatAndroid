@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase;
 import com.rcn.pat.Dao.LocationDao;
 import com.rcn.pat.Dao.LoginDao;
 import com.rcn.pat.ViewModels.LoginViewModel;
+import com.rcn.pat.ViewModels.MyLocation;
 import com.rcn.pat.ViewModels.ServiceInfo;
 import com.rcn.pat.Dao.ServicesDao;
 

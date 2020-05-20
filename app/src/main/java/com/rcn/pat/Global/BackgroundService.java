@@ -22,6 +22,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.rcn.pat.R;
 import com.rcn.pat.Repository.LocationRepository;
+import com.rcn.pat.ViewModels.MyLocation;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;

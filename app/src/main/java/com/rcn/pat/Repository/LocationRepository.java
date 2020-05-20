@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Room;
 
 import com.rcn.pat.Global.MyDataBase;
-import com.rcn.pat.Global.MyLocation;
+import com.rcn.pat.ViewModels.MyLocation;
 
 import java.util.List;
 

@@ -8,7 +8,7 @@ import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
 
-import com.rcn.pat.Global.MyLocation;
+import com.rcn.pat.ViewModels.MyLocation;
 
 import java.util.List;
 

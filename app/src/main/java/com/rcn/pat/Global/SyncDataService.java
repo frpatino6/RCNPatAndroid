@@ -25,6 +25,7 @@ import com.loopj.android.http.TextHttpResponseHandler;
 import com.rcn.pat.R;
 import com.rcn.pat.Repository.LocationRepository;
 import com.rcn.pat.ViewModels.LocationViewModel;
+import com.rcn.pat.ViewModels.MyLocation;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;

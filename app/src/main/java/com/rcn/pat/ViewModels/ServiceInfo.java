@@ -68,6 +68,14 @@ public class ServiceInfo {
     }
 
     public String getFechaUltimaNotification() {
+        if (FechaUltimaNotification == null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            Date d = new Date();
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(d);
+            String newTime = sdf.format(cal.getTime());
+            FechaUltimaNotification = newTime;
+        }
         return FechaUltimaNotification;
     }
 

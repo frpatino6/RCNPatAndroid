@@ -11,6 +11,7 @@ import com.rcn.pat.ViewModels.ServiceInfo;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
@@ -18,10 +19,10 @@ import java.util.Locale;
 public class GlobalClass extends Application {
     private static GlobalClass instance;
 
-    private int minSendLocationToDatabase= 15; //Intervalo en segundos para enviar los datos de localización al backend
+    private int minSendLocationToDatabase = 10; //Intervalo en segundos para enviar los datos de localización al backend
     private String docNumber;
     private ServiceInfo currentService;
-    private ArrayList<ServiceInfo>listServicesDriver;
+    private ArrayList<ServiceInfo> listServicesDriver;
     private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
     //private String urlServices = "http://190.24.154.3/API_Transportes/api/";
 
@@ -66,7 +67,7 @@ public class GlobalClass extends Application {
         this.currentService = currentService;
     }
 
-    public String getDateFormat(String inputDate){
+    public String getDateFormat(String inputDate) {
         Date parsed = null;
         String outputDate = "";
 
@@ -88,10 +89,12 @@ public class GlobalClass extends Application {
     }
 
     public Date getCurrentTime() {
-        SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        Date date = new Date();
-
-        return date;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+        Date d = new Date();
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(d);
+        String newTime = sdf.format(cal.getTime());
+        return cal.getTime();
     }
 
     @Override
@@ -107,7 +110,6 @@ public class GlobalClass extends Application {
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
-
 
 
 }

@@ -1,4 +1,4 @@
-package com.rcn.pat.Global;
+package com.rcn.pat.ViewModels;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
@@ -8,13 +8,30 @@ public class MyLocation {
     private String address;
 
     @PrimaryKey(autoGenerate = true)
+    private int id_location;
     private int id;
     private double latitude;
     private double longitude;
     private long time;
     private String observaciones="";
     private String timeRead;
+    private Integer pausedId = 1;
 
+    public Integer getPausedId() {
+        return pausedId;
+    }
+
+    public void setPausedId(Integer pausedId) {
+        this.pausedId = pausedId;
+    }
+
+    public int getId_location() {
+        return id_location;
+    }
+
+    public void setId_location(int id_location) {
+        this.id_location = id_location;
+    }
 
     public MyLocation() {
     }

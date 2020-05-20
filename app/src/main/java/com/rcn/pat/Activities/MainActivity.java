@@ -58,7 +58,8 @@ import com.rcn.pat.Global.BackgroundService;
 import com.rcn.pat.Global.CustomListViewDialog;
 import com.rcn.pat.Global.DataAdapter;
 import com.rcn.pat.Global.GlobalClass;
-import com.rcn.pat.Global.MyLocation;
+import com.rcn.pat.Global.NetworkStateReceiver;
+import com.rcn.pat.ViewModels.MyLocation;
 import com.rcn.pat.Global.SyncDataService;
 import com.rcn.pat.Notifications.PatFirebaseService;
 import com.rcn.pat.R;
@@ -72,6 +73,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -80,7 +82,7 @@ import java.util.Objects;
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, NetworkStateReceiver.NetworkStateReceiverListener {
 
     public BackgroundService gpsService;
     public Intent intent;
@@ -121,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView statusTextView;
     private Button stopButton;
     private Typeface typeface;
+    private NetworkStateReceiver networkStateReceiver;
 
     private void asyncListPausaReasons() {
 
@@ -177,6 +180,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void setPauseReasonsDialog() {
+
         DataAdapter dataAdapter = new DataAdapter(dataPausaReasons, new DataAdapter.RecyclerViewItemClickListener() {
             @RequiresApi(api = VERSION_CODES.KITKAT)
             @Override
@@ -227,6 +231,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 MyLocation MyLocation = new MyLocation(Double.valueOf(serviceInfo.getLastLatitude()), Double.valueOf(serviceInfo.getLastLongitude()), serviceInfo.getId());
                 MyLocation.setTimeRead(gettime());
                 MyLocation.setObservaciones(obs);
+                MyLocation.setPausedId(serviceInfo.getPausedId());
                 locationRepository.insertLocation(MyLocation);
             }
         } catch (NumberFormatException e) {
@@ -306,7 +311,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void confirmCausePauseDialog() {
 
         if (dataPausaReasons == null)
-            asyncListPausaReasons();
+            if (GlobalClass.getInstance().isNetworkAvailable())
+                asyncListPausaReasons();
+            else
+                showConfirmDialog("No se puede cargar en este momentos los motivos de la pausa.");
         else {
             setPauseReasonsDialog();
         }
@@ -314,29 +322,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void confirmStartService() {
-        AlertDialog.Builder dlgAlert = new AlertDialog.Builder(MainActivity.this);
+        alert = new AlertDialog.Builder(MainActivity.this);
 
         if (GlobalClass.getInstance().getCurrentService().isPaused())
-            dlgAlert.setMessage("¿Seguro de Reiniciar el servicio?");
+            alert.setMessage("¿Seguro de Reiniciar el servicio?");
         else
-            dlgAlert.setMessage("¿Seguro de iniciar el servicio?");
-        dlgAlert.setTitle(getString(R.string.app_name));
+            alert.setMessage("¿Seguro de iniciar el servicio?");
+        alert.setTitle(getString(R.string.app_name));
         //dlgAlert.setPositiveButton(getString(R.string.Texto_Boton_Ok), null);
-        dlgAlert.setPositiveButton(R.string.Texto_Boton_Ok, new DialogInterface.OnClickListener() {
+        alert.setPositiveButton(R.string.Texto_Boton_Ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
 
                 startTracking(true);
 
             }
         });
-        dlgAlert.setNegativeButton(R.string.Texto_Boton_Cancel, new DialogInterface.OnClickListener() {
+        alert.setNegativeButton(R.string.Texto_Boton_Cancel, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
-        dlgAlert.setCancelable(true);
-        dlgAlert.create().show();
+        alert.setCancelable(true);
+        alert.create().show();
     }
 
     private void confirmStopService() {
@@ -534,7 +542,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             serviceRepository.insertService(GlobalClass.getInstance().getCurrentService());
 
                         sendLastLocation(serviceInfo, "");
-                        asyncLocations();
+                        if (GlobalClass.getInstance().isNetworkAvailable())
+                            asyncLocations();
                         startForegroundServices(false);
                         toggleButtons();
                     }
@@ -594,7 +603,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             observations = "Servicio finalizado automáticamente";
 
         sendLastLocation(currentServiceInfo, observations);
-        asyncLocations();
+
+        if (GlobalClass.getInstance().isNetworkAvailable())
+            asyncLocations();
+
         serviceRepository.deleteAllService();
         stopBackgroundServices();
         finish();
@@ -681,6 +693,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             initializaEvents();
             ctx = this;
 
+
+            networkStateReceiver = new NetworkStateReceiver();
+            networkStateReceiver.addListener(this);
+            this.registerReceiver(networkStateReceiver, new IntentFilter(android.net.ConnectivityManager.CONNECTIVITY_ACTION));
+
             broadcastReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -699,13 +716,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         return;
                     else {
                         ServiceInfo serviceInfo = serviceRepository.getStartetService();
-                        ValidateIfEndedService(serviceInfo);
 
                         try {
                             String speed = intent.getStringExtra(BackgroundLocationUpdateService.SERVICE_MESSAGE);
                             if (speed.equals("EndTask")) {
                                 stopTracking(true);
                                 return;
+                            }
+                            if (speed.equals("0")) {
+                                ValidateIfEndedService(serviceInfo);
                             }
                             //Si la velocidad es superior a 4 kms/h inicia automaticamente el servicio.
                             if (!speed.equals("")) {
@@ -730,8 +749,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 ValidateIfServiceReadyToEnd(serviceInfo);
                                 toggleButtons();
                             } else {
-                                Intent i = new
-                                        Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                                Intent i = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                                 startActivity(i);
                             }
                             //Valida si el servicio ya terminó y aún está activo
@@ -788,29 +806,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void ValidateIfEndedService(ServiceInfo serviceInfo) {
-        Date endedServiceDate = GlobalClass.getInstance().getCurrentTime();
+
         try {
             Date currentTime = GlobalClass.getInstance().getCurrentTime();
             currentServiceInfo = serviceInfo;
             if (currentServiceInfo != null) {
-                String srEndServiceTime = currentServiceInfo.getFechaNotification();
+
                 String srNextDateNotification = currentServiceInfo.getFechaUltimaNotification();
                 Date endServiceTime = null;
                 try {
-                    if (serviceInfo.getFechaUltimaNotification() != null)
-                        endServiceTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(srNextDateNotification);//Genera varaible de tipo date con la fecha acutal y hora actual
-                    else
-                        endServiceTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(srEndServiceTime);//Genera varaible de tipo date con la fecha acutal y hora actual
-                    endedServiceDate.setHours(endServiceTime.getHours());//A la fecha actual le setea la hora en que finaliza el servicio
-                    endedServiceDate.setMinutes(endServiceTime.getMinutes() + serviceInfo.getMinutesAfter());
+                    //if (serviceInfo.getFechaUltimaNotification() != null)
+                    endServiceTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()).parse(srNextDateNotification);//Genera varaible de tipo date con la fecha acutal y hora actual
 
-                    if (endedServiceDate.before(currentTime)) {
+
+                    if (endServiceTime.before(currentTime)) {
                         sendNotificationEndService("El servicio a superado la hora límite. ¿Desea continuar?", true);
                         showConfirmStopEndedService(serviceInfo, "El servicio a superado la hora límite. ¿Desea continuar?");
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-                        String nextDateNotifications = sdf.format(currentTime.getTime());
+                        Date d = new Date();
+                        Calendar cal = Calendar.getInstance();
+                        cal.setTime(d);
+                        cal.add(Calendar.MINUTE, serviceInfo.getMinutesAfter());
+                        String newTime = sdf.format(cal.getTime());
+                        String nextDateNotifications = newTime;
                         serviceInfo.setFechaUltimaNotification(nextDateNotifications);
                         serviceRepository.updateService(serviceInfo);
+                        Log.i(TAG, "next nofitication time " + newTime);
                     }
 
                 } catch (ParseException e) {
@@ -827,7 +848,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             contentMessage) {
         // Use the Builder class for convenient dialog construction
         try {
-            AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+            alert = new AlertDialog.Builder(MainActivity.this);
             alert.setTitle("Confirmación");
             alert.setCancelable(false);
             alert.setMessage(contentMessage);
@@ -900,9 +921,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 long diffInMillies = Math.abs(Objects.requireNonNull(dtPauseDate).getTime() - currentDate.getTime());
                 long diff = diffInMillies / (60 * 1000);
                 Log.i(TAG, "ValidateIfAutoStartTrace " + diff);
-                if (diff >= 1) {
+                if (diff >= 5) {
                     Log.i(TAG, "Pausing service ");
-                    pauseService(sdf, 2, "Servicio pausado automáticamente");
+                    pauseService(sdf, 3, "Servicio pausado automáticamente");
                     sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
                     showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
                 }
@@ -1044,7 +1065,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 , String.valueOf(myLocation.getLongitude())
                                 , myLocation.getTimeRead()
                                 , GlobalClass.getInstance().getCurrentService().getId()
-                                , GlobalClass.getInstance().getCurrentService().getPausedId()
+                                , myLocation.getPausedId()
                                 , myLocation.getObservaciones()
                         ));
             }
@@ -1052,6 +1073,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
         locationRepository.deleteAllLocation();
+
         client.post(MainActivity.this, url, entity, tipo, new TextHttpResponseHandler() {
 
             @Override
@@ -1082,4 +1104,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
+    @Override
+    public void networkAvailable() {
+
+    }
+
+    @Override
+    public void networkUnavailable() {
+
+    }
 }
