@@ -68,12 +68,12 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class BackgroundLocationUpdateService extends Service
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
-    public int counter = 0;
     private final String TAG = "BackgroundLocationUpdateService";
     private final String TAG_LOCATION = "TAG_LOCATION";
     private Context context;
     private ServiceInfo currentService;
     private int endTask;
+    private boolean isMyServiceRunning;
     private Integer isStoped;
     private Task<Location> lastLocation;
     private String latitude = "0.0", longitude = "0.0";
@@ -92,7 +92,61 @@ public class BackgroundLocationUpdateService extends Service
     private boolean stopService = false;
     private Timer timer;
     private TimerTask timerTask;
-    private boolean isMyServiceRunning;
+    public int counter = 0;
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(5000);
+        mLocationRequest.setSmallestDisplacement(1);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setMaxWaitTime(5000);
+        mLocationRequest.setSmallestDisplacement(3);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+        builder.addLocationRequest(mLocationRequest);
+        builder.setAlwaysShow(true);
+        mLocationSettingsRequest = builder.build();
+
+        mSettingsClient
+                .checkLocationSettings(mLocationSettingsRequest)
+                .addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
+                    @Override
+                    public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                        Log.e(TAG_LOCATION, "GPS Success");
+                        requestLocationUpdate();
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e(TAG_LOCATION, "GPS onFailure");
+                int statusCode = ((ApiException) e).getStatusCode();
+                switch (statusCode) {
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        sendResult("");
+                        break;
+                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+                        Log.e(TAG_LOCATION, "Location settings are inadequate, and cannot be fixed here. Fix in Settings.");
+                }
+            }
+        }).addOnCanceledListener(new OnCanceledListener() {
+            @Override
+            public void onCanceled() {
+                Log.e(TAG_LOCATION, "checkLocationSettings -> onCanceled");
+            }
+        });
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        connectGoogleClient();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        buildGoogleApiClient();
+    }
 
     @Override
     public void onCreate() {
@@ -103,6 +157,7 @@ public class BackgroundLocationUpdateService extends Service
         serviceRepository = new ServiceRepository(getApplicationContext());
 
     }
+    /* For Google Fused API */
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -161,11 +216,17 @@ public class BackgroundLocationUpdateService extends Service
     public IBinder onBind(Intent intent) {
         return null;
     }
-    /* For Google Fused API */
 
     @Override
     public void onRebind(Intent intent) {
         super.onRebind(intent);
+    }
+
+    private void sendResult(String message) {
+        Intent intent = new Intent(SERVICE_RESULT);
+        if (message != null)
+            intent.putExtra(SERVICE_MESSAGE, message);
+        localBroadcastManager.sendBroadcast(intent);
     }
 
     private void StartForeground() {
@@ -233,6 +294,64 @@ public class BackgroundLocationUpdateService extends Service
     private void requestLocationUpdate() {
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
         Log.e(TAG_LOCATION, "!!!!!requestLocationUpdate¡¡¡¡");
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+    private void asyncLocations() {
+        Log.i("Enviando posiciones", "in timer ++++  ");
+        final int numSendingLocations = result.size();
+        String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
+        AsyncHttpClient client = new AsyncHttpClient();
+        client.setTimeout(60000);
+        String tipo = "application/json";
+
+        StringEntity entity;
+        Gson json = new Gson();
+
+        if (currentService == null)
+            currentService = serviceRepository.getStartetService();
+        final ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
+        if (result != null)
+            for (MyLocation myLocation : result) {
+                locationViewModels.add(
+                        new LocationViewModel(
+                                String.valueOf(myLocation.getLatitude())
+                                , String.valueOf(myLocation.getLongitude())
+                                , myLocation.getTimeRead()
+                                , GlobalClass.getInstance().getCurrentService().getId()
+                                , myLocation.getPausedId(), ""));
+            }
+        String resultJson = json.toJson(locationViewModels);
+
+        entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
+        locationRepository.deleteAllLocation();
+        client.post(context, url, entity, tipo, new TextHttpResponseHandler() {
+
+            @Override
+            public boolean getUseSynchronousMode() {
+                return false;
+            }
+
+            @SuppressLint("RestrictedApi")
+            @Override
+            public void onFinish() {
+
+
+            }
+
+            @SuppressLint("LongLogTag")
+            @Override
+            public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
+                Log.i(TAG, "ERROR Locations sended: " + responseBody + "  " + error.getMessage());
+            }
+
+            @SuppressLint({"RestrictedApi", "LongLogTag"})
+            @Override
+            public void onSuccess(int statusCode, Header[] headers, String responseString) {
+                Log.i(TAG, "Sended locations " + numSendingLocations);
+
+            }
+        });
     }
 
     private void connectGoogleClient() {
@@ -304,9 +423,7 @@ public class BackgroundLocationUpdateService extends Service
                     if (GlobalClass.getInstance().isNetworkAvailable()) {
                         if (result != null && result.size() > 0)
                             asyncLocations();
-                        if (result != null && result.size() == 0) {
-                            sendDataToActivity();
-                        }
+                        sendDataToActivity();
                     } else {
                         sendDataToActivity();
                         lastLocation = mFusedLocationClient.getLastLocation();
@@ -319,13 +436,6 @@ public class BackgroundLocationUpdateService extends Service
         };
     }
 
-    private void sendDataToActivity() {
-        Intent intent = new Intent(SERVICE_RESULT);
-        intent.putExtra(SERVICE_MESSAGE, "0");
-        localBroadcastManager.sendBroadcast(intent);
-        result = locationRepository.getLocations();
-    }
-
     private void insertLocation(Location location, MyLocation loc) {
         loc.setLatitude(location.getLatitude());
         loc.setPausedId(loc.getPausedId());
@@ -334,62 +444,11 @@ public class BackgroundLocationUpdateService extends Service
         locationRepository.insertLocation(loc);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.KITKAT)
-    private void asyncLocations() {
-        Log.i("Enviando posiciones", "in timer ++++  ");
-
-        String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.setTimeout(60000);
-        String tipo = "application/json";
-
-        StringEntity entity;
-        Gson json = new Gson();
-
-        if (currentService == null)
-            currentService = serviceRepository.getStartetService();
-        final ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
-        if (result != null)
-            for (MyLocation myLocation : result) {
-                locationViewModels.add(
-                        new LocationViewModel(
-                                String.valueOf(myLocation.getLatitude())
-                                , String.valueOf(myLocation.getLongitude())
-                                , myLocation.getTimeRead()
-                                , GlobalClass.getInstance().getCurrentService().getId()
-                                , myLocation.getPausedId(), ""));
-            }
-        String resultJson = json.toJson(locationViewModels);
-
-        entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
-        locationRepository.deleteAllLocation();
-        client.post(context, url, entity, tipo, new TextHttpResponseHandler() {
-
-            @Override
-            public boolean getUseSynchronousMode() {
-                return false;
-            }
-
-            @SuppressLint("RestrictedApi")
-            @Override
-            public void onFinish() {
-
-
-            }
-
-            @SuppressLint("LongLogTag")
-            @Override
-            public void onFailure(int statusCode, Header[] headers, String responseBody, Throwable error) {
-                Log.i(TAG, "ERROR Locations sended: " + responseBody + "  " + error.getMessage());
-            }
-
-            @SuppressLint({"RestrictedApi", "LongLogTag"})
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, String responseString) {
-                Log.i(TAG, "Sended locations " + result.size());
-
-            }
-        });
+    private void sendDataToActivity() {
+        Intent intent = new Intent(SERVICE_RESULT);
+        intent.putExtra(SERVICE_MESSAGE, "0");
+        localBroadcastManager.sendBroadcast(intent);
+        result = locationRepository.getLocations();
     }
 
     private String gettime() {
@@ -403,6 +462,12 @@ public class BackgroundLocationUpdateService extends Service
 
         return sdf.format(new Date());
     }
+    public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
+    public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
+    public static final String SERVICE_ACTION_STOP = "com.service.stopBackgroundLocationService";
+    /* For Google Fused API */
+    protected GoogleApiClient mGoogleApiClient;
+    protected LocationSettingsRequest mLocationSettingsRequest;
 
     private boolean currentServiceIsLowSpeed() {
         ServiceInfo serviceInfo = new ServiceRepository(getApplicationContext()).getStartetService();
@@ -411,72 +476,4 @@ public class BackgroundLocationUpdateService extends Service
         }
         return false;
     }
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(5000);
-        mLocationRequest.setSmallestDisplacement(1);
-        mLocationRequest.setFastestInterval(5000);
-        mLocationRequest.setMaxWaitTime(5000);
-        mLocationRequest.setSmallestDisplacement(3);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
-        builder.addLocationRequest(mLocationRequest);
-        builder.setAlwaysShow(true);
-        mLocationSettingsRequest = builder.build();
-
-        mSettingsClient
-                .checkLocationSettings(mLocationSettingsRequest)
-                .addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
-                    @Override
-                    public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
-                        Log.e(TAG_LOCATION, "GPS Success");
-                        requestLocationUpdate();
-                    }
-                }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.e(TAG_LOCATION, "GPS onFailure");
-                int statusCode = ((ApiException) e).getStatusCode();
-                switch (statusCode) {
-                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
-                        sendResult("");
-                        break;
-                    case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-                        Log.e(TAG_LOCATION, "Location settings are inadequate, and cannot be fixed here. Fix in Settings.");
-                }
-            }
-        }).addOnCanceledListener(new OnCanceledListener() {
-            @Override
-            public void onCanceled() {
-                Log.e(TAG_LOCATION, "checkLocationSettings -> onCanceled");
-            }
-        });
-    }
-
-    private void sendResult(String message) {
-        Intent intent = new Intent(SERVICE_RESULT);
-        if (message != null)
-            intent.putExtra(SERVICE_MESSAGE, message);
-        localBroadcastManager.sendBroadcast(intent);
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        connectGoogleClient();
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        buildGoogleApiClient();
-    }
-
-    public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
-    public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
-    public static final String SERVICE_ACTION_STOP = "com.service.stopBackgroundLocationService";
-    /* For Google Fused API */
-    protected GoogleApiClient mGoogleApiClient;
-    protected LocationSettingsRequest mLocationSettingsRequest;
 }
