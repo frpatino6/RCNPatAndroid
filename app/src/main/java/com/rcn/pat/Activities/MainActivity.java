@@ -253,11 +253,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         String observations = "";
         mTracking = false;
         ServiceInfo currentServiceInfo = serviceRepository.getStartetService();
-        GlobalClass.getInstance().getCurrentService().setStarted(false);
-        GlobalClass.getInstance().getCurrentService().setPaused(false);
-        GlobalClass.getInstance().getCurrentService().setStoped(true);
-        GlobalClass.getInstance().getCurrentService().setPausedId(2);
-        serviceRepository.updateService(GlobalClass.getInstance().getCurrentService());
+        currentServiceInfo.setStarted(false);
+        currentServiceInfo.setPaused(false);
+        currentServiceInfo.setStoped(true);
+        currentServiceInfo.setPausedId(2);
+        serviceRepository.updateService(currentServiceInfo);
 
         if (isAtomaticStoped)
             observations = "Servicio finalizado automáticamente";
@@ -330,7 +330,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void asyncLocations() {
 
         result = locationRepository.getLocations();
-        Log.i("Enviando posiciones", "ifrom activity " + result.size());
+        locationRepository.deleteAllLocation();
         String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
         AsyncHttpClient client = new AsyncHttpClient();
         client.setTimeout(60000);
@@ -352,11 +352,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 , myLocation.getObservaciones()
                         ));
             }
+        result.clear();
         String resultJson = json.toJson(locationViewModels);
-
         entity = new StringEntity(resultJson, StandardCharsets.UTF_8);
-        locationRepository.deleteAllLocation();
-
         client.post(MainActivity.this, url, entity, tipo, new TextHttpResponseHandler() {
 
             @Override
@@ -610,12 +608,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (manager != null) {
             for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
                 if (serviceClass.getName().equals(service.service.getClassName())) {
-                    Log.i("isMyServiceRunning?", true + "");
                     return true;
                 }
             }
         }
-        Log.i("isMyServiceRunning?", false + "");
         return false;
     }
 
@@ -684,6 +680,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         currentServiceInfo.setStarted(true);
                                         currentServiceInfo.setStoped(false);
                                         currentServiceInfo.setPaused(false);
+                                        currentServiceInfo.setFechaPausa("");
                                         serviceRepository.updateService(currentServiceInfo);
                                         startTracking(true);
                                         sendNotificationEndService("Se ha detectado actividad y el servicio se reanudará automáticamente", false);
@@ -1046,7 +1043,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     //Valida si se debe iniciar automáticamente la traza
     @RequiresApi(api = VERSION_CODES.KITKAT)
     private void validateIfAutoPauseTrace(ServiceInfo serviceInfo) {
-        Log.i(TAG, "ValidateIfAutoPauseTrace ");
+
         String srPauseDate = serviceInfo.getFechaPausa();
         Date currentDate = new Date();
         try {
@@ -1057,15 +1054,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     serviceRepository.updateService(serviceInfo);
                 }
 
-                Date dtPauseDate = sdf.parse(srPauseDate);
-                long diffInMillies = Math.abs(Objects.requireNonNull(dtPauseDate).getTime() - currentDate.getTime());
-                long diff = diffInMillies / (60 * 1000);
-                Log.i(TAG, "ValidateIfAutoStartTrace " + diff);
-                if (diff >= 5) {
-                    Log.i(TAG, "Pausing service ");
-                    pauseService(sdf, 3, "Servicio pausado automáticamente");
-                    sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
-                    showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
+                if(!srPauseDate.equals("")) {
+                    Date dtPauseDate = sdf.parse(srPauseDate);
+                    long diffInMillies = Math.abs(Objects.requireNonNull(dtPauseDate).getTime() - currentDate.getTime());
+                    long diff = diffInMillies / (60 * 1000);
+
+                    if (diff >= 1) {
+                        pauseService(sdf, 3, "Servicio pausado automáticamente");
+                        sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
+                        showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
+                    }
                 }
             }
 
@@ -1103,7 +1101,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         String nextDateNotifications = newTime;
                         serviceInfo.setFechaUltimaNotification(nextDateNotifications);
                         serviceRepository.updateService(serviceInfo);
-                        Log.i(TAG, "next nofitication time " + newTime);
                     }
 
                 } catch (ParseException e) {
@@ -1124,7 +1121,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 long minutesInMilli = secondsInMilli * 60;
                 long different = dateEnd.getTime() - GlobalClass.getInstance().getCurrentTime().getTime();
                 long elapsedMinutes = different / minutesInMilli;
-                Log.i(TAG, "Validando tiempo restante para terminar el servicio. Minutos restantes: " + elapsedMinutes);
                 if (elapsedMinutes == 60 && !serviceInfo.isIshourNotify()) {
                     serviceInfo.setIshourNotify(true);
                     showConfirmDialog("El servicio finalizará en una hora");

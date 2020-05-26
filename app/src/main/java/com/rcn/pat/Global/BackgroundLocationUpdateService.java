@@ -87,7 +87,6 @@ public class BackgroundLocationUpdateService extends Service
     private LocationCallback mLocationCallback;
     private LocationRequest mLocationRequest;
     private SettingsClient mSettingsClient;
-    private List<MyLocation> result;
     private ServiceRepository serviceRepository;
     private boolean stopService = false;
     private Timer timer;
@@ -185,7 +184,6 @@ public class BackgroundLocationUpdateService extends Service
             String sendTrace = intent.getStringExtra("SendTrace");
             if (sendTrace.equals("1"))
                 if (GlobalClass.getInstance().isNetworkAvailable()) {
-                    if (result != null && result.size() > 0)
                         asyncLocations();
                 }
         }
@@ -299,6 +297,8 @@ public class BackgroundLocationUpdateService extends Service
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void asyncLocations() {
         Log.i("Enviando posiciones", "in timer ++++  ");
+        List<MyLocation> result = locationRepository.getLocations();
+        locationRepository.deleteAllLocation();
         final int numSendingLocations = result.size();
         String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
         AsyncHttpClient client = new AsyncHttpClient();
@@ -421,7 +421,7 @@ public class BackgroundLocationUpdateService extends Service
             public void run() {
 
                 try {
-                    result = locationRepository.getLocations();
+                    List<MyLocation> result = locationRepository.getLocations();
                     if (GlobalClass.getInstance().isNetworkAvailable()) {
                         if (result != null && result.size() > 0)
                             asyncLocations();
@@ -450,7 +450,6 @@ public class BackgroundLocationUpdateService extends Service
         Intent intent = new Intent(SERVICE_RESULT);
         intent.putExtra(SERVICE_MESSAGE, "0");
         localBroadcastManager.sendBroadcast(intent);
-        result = locationRepository.getLocations();
     }
 
     private String gettime() {
