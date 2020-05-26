@@ -388,6 +388,8 @@ public class BackgroundLocationUpdateService extends Service
                     currentService.setLastLongitude(longitude);
                     serviceRepository.updateService(currentService);
                     localBroadcastManager.sendBroadcast(intent);
+                    if(currentService.isPaused() && location.getSpeed()>5)
+                        currentService.setStarted(true);
                 }
                /* Toast toast = Toast.makeText(getApplicationContext(), "Latitud: " + latitude.toString() + " Logintud: " + longitude, Toast.LENGTH_LONG);
                 toast.setMargin(50, 50);

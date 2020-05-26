@@ -33,6 +33,7 @@
 
         <activity
             android:name=".Activities.MainActivity"
+            android:noHistory="true"
             android:exported="true" />
 
         <receiver android:name=".Global.AlarmReceiver"></receiver>
