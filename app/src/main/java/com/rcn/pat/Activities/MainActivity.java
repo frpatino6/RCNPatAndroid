@@ -362,7 +362,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 , String.valueOf(myLocation.getLongitude())
                                 , myLocation.getTimeRead()
                                 , serviceInfo.getId()
-                                , serviceInfo.getPausedId()
+                                , myLocation.getPausedId()
                                 , myLocation.getObservaciones()
                         ));
             }
@@ -700,6 +700,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         serviceInfo.setStoped(false);
                                         serviceInfo.setPaused(false);
                                         serviceInfo.setFechaPausa("");
+                                        serviceInfo.setPausedId(1);
+
                                         serviceRepository.updateService(serviceInfo);
                                         startTracking(true);
                                         sendNotificationEndService("Se ha detectado actividad y el servicio se reanudará automáticamente", false);

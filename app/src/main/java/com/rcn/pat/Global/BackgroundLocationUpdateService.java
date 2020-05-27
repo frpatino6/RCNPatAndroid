@@ -392,8 +392,7 @@ public class BackgroundLocationUpdateService extends Service
                     currentService.setLastLatitude(latitude);
                     currentService.setLastLongitude(longitude);
                     localBroadcastManager.sendBroadcast(intent);
-                    if(currentService.isPaused() && location.getSpeed()>5)
-                        currentService.setStarted(true);
+
 
                     serviceRepository.updateService(currentService);
                 }
@@ -401,7 +400,7 @@ public class BackgroundLocationUpdateService extends Service
                 toast.setMargin(50, 50);
                 toast.show();*/
             }
-            Log.d(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude() + " Speed : " + location.getSpeed());
+            Log.d(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude() + " Speed : " + location.getSpeed() + " PauseId : " + currentService.getPausedId().toString());
         }
     }
 
