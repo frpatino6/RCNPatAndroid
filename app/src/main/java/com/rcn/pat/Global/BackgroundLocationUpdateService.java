@@ -71,7 +71,6 @@ public class BackgroundLocationUpdateService extends Service
     private final String TAG = "BackgroundLocationUpdateService";
     private final String TAG_LOCATION = "TAG_LOCATION";
     private Context context;
-    private ServiceInfo currentService;
     private int endTask;
     private boolean isMyServiceRunning;
     private Integer isStoped;
@@ -294,10 +293,18 @@ public class BackgroundLocationUpdateService extends Service
         Log.e(TAG_LOCATION, "!!!!!requestLocationUpdate¡¡¡¡");
     }
 
+    @SuppressLint("LongLogTag")
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     private void asyncLocations() {
+
         Log.i("Enviando posiciones", "in timer ++++  ");
         List<MyLocation> result = locationRepository.getLocations();
+
+        if(result.size() == 0) {
+            Log.e(TAG,"No hay datos de localizacion a enviar");
+            return;
+        }
+
         locationRepository.deleteAllLocation();
         final int numSendingLocations = result.size();
         String url = GlobalClass.getInstance().getUrlServices() + "SaveGPS";
@@ -308,8 +315,8 @@ public class BackgroundLocationUpdateService extends Service
         StringEntity entity;
         Gson json = new Gson();
 
-        if (currentService == null)
-            currentService = serviceRepository.getStartetService();
+
+        ServiceInfo currentService = serviceRepository.getStartetService();
         final ArrayList<LocationViewModel> locationViewModels = new ArrayList<>();
         if (result != null)
             for (MyLocation myLocation : result) {
@@ -318,7 +325,7 @@ public class BackgroundLocationUpdateService extends Service
                                 String.valueOf(myLocation.getLatitude())
                                 , String.valueOf(myLocation.getLongitude())
                                 , myLocation.getTimeRead()
-                                , GlobalClass.getInstance().getCurrentService().getId()
+                                , currentService.getId()
                                 , myLocation.getPausedId(), ""));
             }
         String resultJson = json.toJson(locationViewModels);
@@ -365,7 +372,7 @@ public class BackgroundLocationUpdateService extends Service
     @Override
     public void onLocationChanged(Location location) {
         // Log.e(TAG_LOCATION, "Location Changed Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude());
-
+        ServiceInfo currentService = serviceRepository.getStartetService();
         latitude = String.valueOf(location.getLatitude());
         longitude = String.valueOf(location.getLongitude());
 
@@ -380,16 +387,15 @@ public class BackgroundLocationUpdateService extends Service
 
                 Intent intent = new Intent(SERVICE_RESULT);
                 intent.putExtra(SERVICE_MESSAGE, String.valueOf(location.getSpeed()));
-                if (currentService == null)
-                    currentService = serviceRepository.getStartetService();
 
                 if (currentService != null) {
                     currentService.setLastLatitude(latitude);
                     currentService.setLastLongitude(longitude);
-                    serviceRepository.updateService(currentService);
                     localBroadcastManager.sendBroadcast(intent);
                     if(currentService.isPaused() && location.getSpeed()>5)
                         currentService.setStarted(true);
+
+                    serviceRepository.updateService(currentService);
                 }
                /* Toast toast = Toast.makeText(getApplicationContext(), "Latitud: " + latitude.toString() + " Logintud: " + longitude, Toast.LENGTH_LONG);
                 toast.setMargin(50, 50);

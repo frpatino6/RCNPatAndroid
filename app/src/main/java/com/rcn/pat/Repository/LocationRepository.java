@@ -3,6 +3,7 @@ package com.rcn.pat.Repository;
 
 import android.content.Context;
 import android.os.AsyncTask;
+import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 import androidx.room.Room;
@@ -25,7 +26,12 @@ public class LocationRepository {
 
 
     public void insertLocation(final MyLocation location) {
-        myDataBase.dao().insertLocation(location);
+
+        List<MyLocation> locations = myDataBase.dao().fetchAllLocation(location.getLatitude(), location.getLongitude());
+        if (locations.size() == 0)
+            myDataBase.dao().insertLocation(location);
+        else
+            Log.e("LocationRepository","GPS Posición repetida");
     }
 
     public void updateLocation(final MyLocation location) {

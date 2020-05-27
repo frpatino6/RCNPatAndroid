@@ -31,14 +31,12 @@ public class ServiceRepository {
         if (data != null)
             return serviceInfo;
         myDataBase.servicesDao().insertServiceInfo(serviceInfo);
-        GlobalClass.getInstance().setCurrentService(serviceInfo);
         data = getService(serviceInfo.getId());
         return data;
     }
 
     public void updateService(final ServiceInfo ServiceInfo) {
         myDataBase.servicesDao().updateServiceInfo(ServiceInfo);
-        GlobalClass.getInstance().setCurrentService(ServiceInfo);
     }
 
     public void deleteService(final int id) {
