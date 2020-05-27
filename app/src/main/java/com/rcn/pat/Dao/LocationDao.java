@@ -18,8 +18,8 @@ public interface LocationDao {
     Long insertLocation(MyLocation location);
 
 
-    @Query("SELECT * FROM MyLocation where latitude = :lat  and longitude = :lon")
-    List<MyLocation> fetchAllLocation(double lat, double lon);
+    @Query("SELECT * FROM MyLocation where latitude = :lat  and longitude = :lon  and pausedId = :pausedId")
+    List<MyLocation> fetchAllLocation(double lat, double lon, int pausedId);
 
 
     @Query("SELECT * FROM MyLocation WHERE id =:id")

@@ -47,6 +47,7 @@ import java.util.List;
 import cz.msebera.android.httpclient.Header;
 
 public class ListDriverServicesActivity extends AppCompatActivity {
+    private static final String TAG = "LoginActivity";
     private ServiceAdapter adapter;
     private BroadcastReceiver broadcastReceiverFirebase;
     private ArrayList<ServiceInfo> data;
@@ -57,36 +58,13 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private String pws;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        asyncListProductions(true);
-    }
 
-    private String getCurrentDeviceToken() {
-        FirebaseInstanceId.getInstance().getInstanceId()
-                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
-
-                    @Override
-                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
-                        if (!task.isSuccessful()) {
-                            Log.w(TAG, "getInstanceId failed", task.getException());
-                            return;
-                        }
-
-                        // Get new Instance ID token
-                        deviceToken = task.getResult().getToken();
-                        Log.d(TAG, deviceToken);
-                        asyncListProductions(true);
-                        // Log and toast
-                        @SuppressLint({"StringFormatInvalid", "LocalSuppress"}) String msg = getString(R.string.msg_token_fmt, deviceToken);
-                        Log.d(TAG, msg);
-                        //Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_SHORT).show();
-                    }
-                });
-        return "";
+        if (GlobalClass.getInstance().isNetworkAvailable())
+            asyncListProductions(true);
     }
 
     private void asyncListProductions(boolean showProgress) {
@@ -181,7 +159,8 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         swipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {
-                asyncListProductions(false);
+                if (GlobalClass.getInstance().isNetworkAvailable())
+                    asyncListProductions(false);
             }
         });
         broadcastReceiverFirebase = new BroadcastReceiver() {
@@ -189,12 +168,38 @@ public class ListDriverServicesActivity extends AppCompatActivity {
             public void onReceive(Context context, Intent intent) {
                 String s = intent.getStringExtra(PatFirebaseService.SERVICE_MESSAGE);
                 //Actualiza la informaci[on del servicio
-                asyncListProductions(true);
+                if (GlobalClass.getInstance().isNetworkAvailable())
+                    asyncListProductions(true);
             }
         };
         getCurrentDeviceToken();
 
 
+    }
+
+    private String getCurrentDeviceToken() {
+        FirebaseInstanceId.getInstance().getInstanceId()
+                .addOnCompleteListener(new OnCompleteListener<InstanceIdResult>() {
+
+                    @Override
+                    public void onComplete(@NonNull Task<InstanceIdResult> task) {
+                        if (!task.isSuccessful()) {
+                            Log.w(TAG, "getInstanceId failed", task.getException());
+                            return;
+                        }
+
+                        // Get new Instance ID token
+                        deviceToken = task.getResult().getToken();
+                        Log.d(TAG, deviceToken);
+                        if (GlobalClass.getInstance().isNetworkAvailable())
+                            asyncListProductions(true);
+                        // Log and toast
+                        @SuppressLint({"StringFormatInvalid", "LocalSuppress"}) String msg = getString(R.string.msg_token_fmt, deviceToken);
+                        Log.d(TAG, msg);
+                        //Toast.makeText(LoginActivity.this, msg, Toast.LENGTH_SHORT).show();
+                    }
+                });
+        return "";
     }
 
     @Override

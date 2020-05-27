@@ -19,7 +19,7 @@ import java.util.Locale;
 public class GlobalClass extends Application {
     private static GlobalClass instance;
 
-    private int minSendLocationToDatabase = 300; //Intervalo en segundos para enviar los datos de localización al backend
+    private int minSendLocationToDatabase = 240; //Intervalo en segundos para enviar los datos de localización al backend
     private String docNumber;
     private ServiceInfo currentService;
     private ArrayList<ServiceInfo> listServicesDriver;

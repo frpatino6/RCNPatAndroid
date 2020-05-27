@@ -27,11 +27,11 @@ public class LocationRepository {
 
     public void insertLocation(final MyLocation location) {
 
-        List<MyLocation> locations = myDataBase.dao().fetchAllLocation(location.getLatitude(), location.getLongitude());
-        //if (locations.size() == 0)
+        List<MyLocation> locations = myDataBase.dao().fetchAllLocation(location.getLatitude(), location.getLongitude(), location.getPausedId());
+        if (locations.size() == 0)
             myDataBase.dao().insertLocation(location);
-        //else
-        //    Log.e("LocationRepository","GPS Posición repetida");
+        else
+            Log.e("LocationRepository","GPS Posición repetida");
     }
 
     public void updateLocation(final MyLocation location) {

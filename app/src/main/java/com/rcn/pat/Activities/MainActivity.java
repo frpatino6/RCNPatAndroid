@@ -11,6 +11,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -572,7 +573,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (serviceInfo == null)
             serviceInfo = GlobalClass.getInstance().getCurrentService();
 
-        int id = GlobalClass.getInstance().getCurrentService().getId();
+
+        int id = GlobalClass.getInstance().getCurrentService() == null ? serviceInfo.getId() : GlobalClass.getInstance().getCurrentService().getId() ;
         if (serviceInfo == null) {
             toggleButtons();
             return;
@@ -636,13 +638,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     }
+    @Override
+    protected void onStop()
+    {
+        try {
+            unregisterReceiver(networkStateReceiver);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        super.onStop();
+    }
 
     @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        if (intent.hasExtra("key")) {
-            //do your Stuff
-        }
+    protected void onResume() {
+        super.onResume();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -818,6 +827,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void sendNotificationEndService(String contentText, boolean showButtons) {
 
         Intent intent = new Intent(this, BackgroundLocationUpdateService.class);
+
         Bundle endBundle = new Bundle();
         endBundle.putInt("EndTask", 1);//This is the value I want to pass
         intent.putExtras(endBundle);
@@ -826,11 +836,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         Intent intentContinue = new Intent(this, MainActivity.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addNextIntentWithParentStack(intentContinue);
         Bundle continueBundle = new Bundle();
         continueBundle.putInt("EndTask", 0);//This is the value I want to pass
         intentContinue.putExtras(continueBundle);
         PendingIntent pendingIntentContinue =
-                PendingIntent.getActivity(this, 1, intentContinue, PendingIntent.FLAG_ONE_SHOT);
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
 
         String CHANNEL_ID = "channel_location";
@@ -1132,15 +1144,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 long minutesInMilli = secondsInMilli * 60;
                 long different = dateEnd.getTime() - GlobalClass.getInstance().getCurrentTime().getTime();
                 long elapsedMinutes = different / minutesInMilli;
-                if (elapsedMinutes == 60 && !serviceInfo.isIshourNotify()) {
+                if ((elapsedMinutes <= 60 && elapsedMinutes >= 50) && !serviceInfo.isIshourNotify()) {
                     serviceInfo.setIshourNotify(true);
-                    showConfirmDialog("El servicio finalizará en una hora");
+                    showConfirmDialog("El servicio finalizará en aproximadamente 60 minutos");
                     sendNotificationEndService("El servicio finalizará en una hora", false);
                     serviceRepository.updateService(serviceInfo);
                 }
-                if (elapsedMinutes == 30 && !serviceInfo.isIshalfhourNotify()) {
+                if ((elapsedMinutes <= 30  && elapsedMinutes >= 20) && !serviceInfo.isIshalfhourNotify()) {
                     serviceInfo.setIshalfhourNotify(true);
-                    showConfirmDialog("El servicio finalizará en  media hora");
+                    showConfirmDialog("El servicio finalizará en  aproximadamente 30 minutos");
                     sendNotificationEndService("El servicio finalizará en media hora", false);
                     serviceRepository.updateService(serviceInfo);
                 }

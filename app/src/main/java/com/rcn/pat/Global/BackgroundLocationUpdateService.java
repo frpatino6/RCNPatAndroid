@@ -6,6 +6,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -16,6 +17,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -153,9 +155,11 @@ public class BackgroundLocationUpdateService extends Service
         locationRepository = new LocationRepository(getApplicationContext());
         localBroadcastManager = LocalBroadcastManager.getInstance(this);
         serviceRepository = new ServiceRepository(getApplicationContext());
-
+        //Toast toast = Toast.makeText(context, "onCreate...", Toast.LENGTH_LONG);
+        //toast.show();
     }
     /* For Google Fused API */
+
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
     @Override
@@ -186,8 +190,19 @@ public class BackgroundLocationUpdateService extends Service
                         asyncLocations();
                 }
         }
-
+        Log.d("TAG", "Service started.");
+        //return super.onStartCommand(intent, flags, startId);
+        //Toast toast = Toast.makeText(context, "onStartCommand...", Toast.LENGTH_LONG);
+        //toast.show();
         return START_STICKY;
+    }
+
+    @Override
+    public void onStart(Intent intent, int startId) {
+        super.onStart(intent, startId);
+        Log.d("TAG", "Service started.");
+        //Toast toast = Toast.makeText(context, "onStart...", Toast.LENGTH_LONG);
+        //toast.show();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.KITKAT)
@@ -203,6 +218,8 @@ public class BackgroundLocationUpdateService extends Service
         timer.cancel();
         timer.purge();
         timer = null;
+        //Toast toast = Toast.makeText(context, "onDestroy...", Toast.LENGTH_LONG);
+        //toast.show();
         //requestLocationUpdate();
 
         super.onDestroy();
@@ -211,6 +228,8 @@ public class BackgroundLocationUpdateService extends Service
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
+        //Toast toast = Toast.makeText(context, "IBinder...", Toast.LENGTH_LONG);
+        //toast.show();
         return null;
     }
 
@@ -228,8 +247,13 @@ public class BackgroundLocationUpdateService extends Service
 
     private void StartForeground() {
         Intent intent = new Intent(context, MainActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent, PendingIntent.FLAG_ONE_SHOT);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addNextIntentWithParentStack(intent);
+
+        PendingIntent pendingIntent =
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
 
         String CHANNEL_ID = "channel_location";
         String CHANNEL_NAME = "channel_location";
@@ -256,6 +280,8 @@ public class BackgroundLocationUpdateService extends Service
         builder.setContentIntent(pendingIntent);
         Notification notification = builder.build();
         startForeground(101, notification);
+        //Toast toast = Toast.makeText(context, "StartForeground...", Toast.LENGTH_LONG);
+        //toast.show();
     }
 
     protected synchronized void buildGoogleApiClient() {
