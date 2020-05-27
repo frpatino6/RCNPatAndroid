@@ -1068,7 +1068,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     long diffInMillies = Math.abs(Objects.requireNonNull(dtPauseDate).getTime() - currentDate.getTime());
                     long diff = diffInMillies / (60 * 1000);
 
-                    if (diff >= 1) {
+                    if (diff >= 5) {
                         pauseService(sdf, 3, "Servicio pausado automáticamente");
                         sendNotificationEndService("No se ha detectado actividad y el servicio ha sido pausado automáticamente", false);
                         showConfirmDialog("No se ha detectado actividad y el servicio ha sido pausado automáticamente");
