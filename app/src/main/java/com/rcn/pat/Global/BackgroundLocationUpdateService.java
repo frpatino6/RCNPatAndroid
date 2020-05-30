@@ -16,6 +16,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.SystemClock;
@@ -32,7 +33,10 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
@@ -40,6 +44,8 @@ import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStates;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.tasks.OnCanceledListener;
@@ -72,6 +78,7 @@ import cz.msebera.android.httpclient.entity.StringEntity;
 
 public class BackgroundLocationUpdateService extends Service
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+    private static final int INTENT_EXTRA_CONNECTION_RESULT = 1001;
     private final String TAG = "BackgroundLocationUpdateService";
     private final String TAG_LOCATION = "TAG_LOCATION";
     private Context context;
@@ -111,6 +118,31 @@ public class BackgroundLocationUpdateService extends Service
         builder.setAlwaysShow(true);
         mLocationSettingsRequest = builder.build();
 
+
+        final PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient, builder.build());
+
+        result.setResultCallback(new ResultCallback<LocationSettingsResult>() {
+            @Override
+            public void onResult(@NonNull final LocationSettingsResult locationSettingsResult) {
+                final Status status = locationSettingsResult.getStatus();
+                final LocationSettingsStates state = locationSettingsResult.getLocationSettingsStates();
+                switch (status.getStatusCode()) {
+                    case LocationSettingsStatusCodes.SUCCESS:
+                        // All location settings are satisfied. The client can initialize location
+                        // requests here.
+                        break;
+                    case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                        // Location settings are not satisfied. But could be fixed by showing the user
+                        // a dialog.
+
+
+                        break;
+                }
+            }
+        });
+
+
         mSettingsClient
                 .checkLocationSettings(mLocationSettingsRequest)
                 .addOnSuccessListener(new OnSuccessListener<LocationSettingsResponse>() {
@@ -134,11 +166,7 @@ public class BackgroundLocationUpdateService extends Service
                             ResolvableApiException resolvable = (ResolvableApiException) exception;
                             // Show the dialog by calling startResolutionForResult(),
                             // and check the result in onActivityResult().
-                            resolvable.startResolutionForResult(
-                                   null,
-                                    1);
-                        } catch (IntentSender.SendIntentException e) {
-                            // Ignore the error.
+
                         } catch (ClassCastException e) {
                             // Ignore, should be an impossible error.
                         }
@@ -204,7 +232,7 @@ public class BackgroundLocationUpdateService extends Service
             String sendTrace = intent.getStringExtra("SendTrace");
             if (sendTrace.equals("1"))
                 if (GlobalClass.getInstance().isNetworkAvailable()) {
-                        asyncLocations();
+                    asyncLocations();
                 }
         }
         Log.d("TAG", "Service started.");
@@ -269,7 +297,6 @@ public class BackgroundLocationUpdateService extends Service
 
         PendingIntent pendingIntent =
                 stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-
 
 
         String CHANNEL_ID = "channel_location";
@@ -343,8 +370,8 @@ public class BackgroundLocationUpdateService extends Service
         Log.i("Enviando posiciones", "in timer ++++  ");
         List<MyLocation> result = locationRepository.getLocations();
 
-        if(result.size() == 0) {
-            Log.e(TAG,"No hay datos de localizacion a enviar");
+        if (result.size() == 0) {
+            Log.e(TAG, "No hay datos de localizacion a enviar");
             return;
         }
 
@@ -511,6 +538,7 @@ public class BackgroundLocationUpdateService extends Service
 
         return sdf.format(new Date());
     }
+
     public static final String SERVICE_RESULT = "com.service.resultBackgroundLocationService";
     public static final String SERVICE_MESSAGE = "com.service.messageBackgroundLocationService";
     public static final String SERVICE_ACTION_STOP = "com.service.stopBackgroundLocationService";

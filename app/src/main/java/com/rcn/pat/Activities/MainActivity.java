@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -33,6 +34,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
@@ -41,6 +43,16 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
@@ -84,7 +96,8 @@ import java.util.Objects;
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.entity.StringEntity;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, NetworkStateReceiver.NetworkStateReceiverListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, NetworkStateReceiver.NetworkStateReceiverListener, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
+        ResultCallback<LocationSettingsResult> {
 
     private final String TAG = "MainActivity";
     private boolean blockService = false;
@@ -110,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView lblStart;
     private TextView lblStop;
     private LocationRepository locationRepository;
+    private GoogleApiClient mGoogleApiClient;
     private SyncDataService mSensorService;
     private Intent mServiceIntent;
     private AlarmManager manager;
@@ -157,6 +171,55 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.stopButton:
                 stopTracking(false);
                 break;
+        }
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+        mGoogleApiClient.connect();
+    }
+
+    public void show() {
+        mGoogleApiClient.connect();
+
+        final LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        locationRequest.setInterval(30 * 1000);
+        locationRequest.setFastestInterval(5 * 1000);
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
+                .addLocationRequest(locationRequest);
+
+        builder.setAlwaysShow(true);
+
+        PendingResult<LocationSettingsResult> result =
+                LocationServices.SettingsApi.checkLocationSettings(mGoogleApiClient,
+                        builder.build());
+
+        result.setResultCallback(this);
+    }
+
+    @Override
+    public void onResult(@NonNull LocationSettingsResult locationSettingsResult) {
+        Status status = locationSettingsResult.getStatus();
+        switch (status.getStatusCode()) {
+            case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+                try {
+                    status.startResolutionForResult(
+                            MainActivity.this, 1000);
+                    mGoogleApiClient.disconnect();
+                } catch (IntentSender.SendIntentException e) {
+                    Log.e(TAG, e.getMessage());
+                }
         }
     }
 
@@ -339,8 +402,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         result = locationRepository.getLocations();
 
-        if(result.size() == 0) {
-            Log.e(TAG,"No hay datos de localizacion a enviar");
+        if (result.size() == 0) {
+            Log.e(TAG, "No hay datos de localizacion a enviar");
             return;
         }
 
@@ -574,7 +637,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             serviceInfo = GlobalClass.getInstance().getCurrentService();
 
 
-        int id = GlobalClass.getInstance().getCurrentService() == null ? serviceInfo.getId() : GlobalClass.getInstance().getCurrentService().getId() ;
+        int id = GlobalClass.getInstance().getCurrentService() == null ? serviceInfo.getId() : GlobalClass.getInstance().getCurrentService().getId();
         if (serviceInfo == null) {
             toggleButtons();
             return;
@@ -638,9 +701,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
     }
+
     @Override
-    protected void onStop()
-    {
+    protected void onStop() {
         try {
             unregisterReceiver(networkStateReceiver);
         } catch (Exception e) {
@@ -652,6 +715,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onResume() {
         super.onResume();
+    }
+
+    private synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(MainActivity.this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this).build();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -666,6 +736,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             setWidgetIds();
             initializaValues();
             initializaEvents();
+            buildGoogleApiClient();
+            show();
             ctx = this;
 
 
@@ -1150,7 +1222,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     sendNotificationEndService("El servicio finalizará en una hora", false);
                     serviceRepository.updateService(serviceInfo);
                 }
-                if ((elapsedMinutes <= 30  && elapsedMinutes >= 20) && !serviceInfo.isIshalfhourNotify()) {
+                if ((elapsedMinutes <= 30 && elapsedMinutes >= 20) && !serviceInfo.isIshalfhourNotify()) {
                     serviceInfo.setIshalfhourNotify(true);
                     showConfirmDialog("El servicio finalizará en  aproximadamente 30 minutos");
                     sendNotificationEndService("El servicio finalizará en media hora", false);
