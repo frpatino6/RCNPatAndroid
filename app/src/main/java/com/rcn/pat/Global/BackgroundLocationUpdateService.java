@@ -470,7 +470,7 @@ public class BackgroundLocationUpdateService extends Service
                 toast.setMargin(50, 50);
                 toast.show();*/
             }
-            Log.d(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude() + " Speed : " + location.getSpeed() + " PauseId : " + currentService.getPausedId().toString());
+            Log.d(TAG_LOCATION, "Latitude : " + location.getLatitude() + " Longitude : " + location.getLongitude() + " Speed : " + location.getSpeed() + " PauseId : " + currentService.getPausedId() == null ? "pausa null " : currentService.getPausedId().toString());
         }
     }
 

@@ -5,10 +5,13 @@ import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.RequiresApi;
@@ -19,9 +22,11 @@ import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.rcn.pat.Activities.ListDriverServicesActivity;
 import com.rcn.pat.Activities.MainActivity;
+import com.rcn.pat.Global.BackgroundLocationUpdateService;
 import com.rcn.pat.R;
 
 import java.util.List;
+import java.util.Objects;
 
 public class PatFirebaseService extends FirebaseMessagingService {
     private static final String TAG = "PatFirebaseService";
@@ -66,19 +71,49 @@ public class PatFirebaseService extends FirebaseMessagingService {
                 }
             }
         }
-        createNotificationChannel();
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, nIntent, 0);
-        Notification notiBuilder = new NotificationCompat.Builder(this, "channel_01")
-                .setContentTitle("PAT")
-                .setContentText("Servicio actualizado")
-                .setSmallIcon(R.drawable.icon)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setContentIntent(pendingIntent).build();
+        Intent intent = new Intent(this, BackgroundLocationUpdateService.class);
 
-        notiBuilder.flags |= Notification.FLAG_NO_CLEAR;
+        Bundle endBundle = new Bundle();
+        endBundle.putInt("EndTask", 1);//This is the value I want to pass
+        intent.putExtras(endBundle);
+        PendingIntent pendingIntentEnd =
+                PendingIntent.getService(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        notificationManager.notify(ID_NOTIFICACION_CREAR, notiBuilder);
+
+        Intent intentContinue = new Intent(this, MainActivity.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addNextIntentWithParentStack(intentContinue);
+        Bundle continueBundle = new Bundle();
+        continueBundle.putInt("EndTask", 0);//This is the value I want to pass
+        intentContinue.putExtras(continueBundle);
+        PendingIntent pendingIntentContinue =
+                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        String CHANNEL_ID = "channel_location";
+        String CHANNEL_NAME = "channel_location";
+
+        NotificationCompat.Builder builder;
+        NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+            Objects.requireNonNull(notificationManager).createNotificationChannel(channel);
+            builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);
+            builder.setChannelId(CHANNEL_ID);
+            builder.setBadgeIconType(NotificationCompat.BADGE_ICON_NONE);
+        } else {
+            builder = new NotificationCompat.Builder(getApplicationContext(), CHANNEL_ID);
+        }
+
+        builder.setContentText("Servicio actualizado");
+        builder.setContentTitle("PAT");
+        builder.setContentTitle(getString(R.string.app_name));
+        Uri notificationSound = RingtoneManager.getActualDefaultRingtoneUri(this, RingtoneManager.TYPE_NOTIFICATION);
+        builder.setSound(notificationSound);
+        builder.setAutoCancel(true);
+        builder.setSmallIcon(R.drawable.icon);
+        notificationManager.notify(0, builder.getNotification());
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)

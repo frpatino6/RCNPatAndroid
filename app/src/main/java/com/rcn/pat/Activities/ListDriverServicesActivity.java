@@ -53,7 +53,6 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private ArrayList<ServiceInfo> data;
     private ArrayList<PausaReasons> dataPausaReasons;
     private String deviceToken;
-    private ProgressDialog dialogo;
     private LinearLayoutManager layoutManager;
     private String pws;
     private RecyclerView recyclerView;
@@ -69,14 +68,18 @@ public class ListDriverServicesActivity extends AppCompatActivity {
 
     private void asyncListProductions(boolean showProgress) {
 
-
+        final ProgressDialog dialogo = new ProgressDialog(ListDriverServicesActivity.this);
         if (GlobalClass.getInstance().isNetworkAvailable()) {
             if (showProgress) {
-                dialogo = new ProgressDialog(ListDriverServicesActivity.this);
-                dialogo.setMessage("Cargando servicios...");
-                dialogo.setIndeterminate(false);
-                dialogo.setCancelable(false);
-                dialogo.show();
+                try {
+
+                    dialogo.setMessage("Cargando servicios...");
+                    dialogo.setIndeterminate(false);
+                    dialogo.setCancelable(false);
+                    dialogo.show();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
             String url = GlobalClass.getInstance().getUrlServices() + "ScheduleByDriver?NoDocumento=" + GlobalClass.getInstance().getDocNumber() + "&Token=" + deviceToken + "&Plataforma=android";
             AsyncHttpClient client = new AsyncHttpClient();
@@ -86,7 +89,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
             client.get(url, new TextHttpResponseHandler() {
                         @Override
                         public void onFailure(int statusCode, Header[] headers, String res, Throwable t) {
-
+                            dialogo.dismiss();
 
                         }
 
@@ -112,9 +115,10 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                                         goDetailService(idServicio);
                                     }
                                 });
+
                                 recyclerView.setAdapter(adapter);
                                 deleteOldServices();
-
+                                Log.i(TAG, "asyncListProductions Ejecutado con éxito");
 
                             } catch (JsonSyntaxException e) {
                                 e.printStackTrace();
@@ -125,7 +129,6 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                         @Override
                         public void onFinish() {
                             super.onFinish();
-                            dialogo.hide();
                             dialogo.dismiss();
                             swipeRefreshLayout.setRefreshing(false);
                         }

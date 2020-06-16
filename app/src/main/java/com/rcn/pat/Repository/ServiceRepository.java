@@ -6,24 +6,14 @@ import android.os.AsyncTask;
 
 import androidx.room.Room;
 
-import com.rcn.pat.Global.GlobalClass;
 import com.rcn.pat.Global.MyDataBase;
 import com.rcn.pat.ViewModels.ServiceInfo;
 
-import java.util.Date;
 import java.util.List;
 
 public class ServiceRepository {
     private String DB_NAME = "location_db";
     private MyDataBase myDataBase;
-
-    public ServiceRepository(Context context) {
-        myDataBase = Room.databaseBuilder(context, MyDataBase.class, DB_NAME)
-                .fallbackToDestructiveMigration()
-                .allowMainThreadQueries()
-                .build();
-    }
-
 
     public ServiceInfo insertService(final ServiceInfo serviceInfo) {
         //Valida que no haya un registro con el mismo id
@@ -33,6 +23,10 @@ public class ServiceRepository {
         myDataBase.servicesDao().insertServiceInfo(serviceInfo);
         data = getService(serviceInfo.getId());
         return data;
+    }
+
+    public ServiceInfo getService(int id) {
+        return myDataBase.servicesDao().getServiceInfo(id);
     }
 
     public void updateService(final ServiceInfo ServiceInfo) {
@@ -72,6 +66,13 @@ public class ServiceRepository {
 
     }
 
+    public void updateEndTimeServiceInfo(final String endDate, final int id) {
+
+
+        myDataBase.servicesDao().updateEndTimeServiceInfo(endDate, id);
+
+
+    }
 
     public void deleteService(final ServiceInfo ServiceInfo) {
         new AsyncTask<Void, Void, Void>() {
@@ -88,11 +89,14 @@ public class ServiceRepository {
         return myDataBase.servicesDao().getStartetService();
     }
 
-    public ServiceInfo getService(int id) {
-        return myDataBase.servicesDao().getServiceInfo(id);
-    }
-
     public List<ServiceInfo> getService() {
         return myDataBase.servicesDao().getAllSections();
+    }
+
+    public ServiceRepository(Context context) {
+        myDataBase = Room.databaseBuilder(context, MyDataBase.class, DB_NAME)
+                .fallbackToDestructiveMigration()
+                .allowMainThreadQueries()
+                .build();
     }
 }

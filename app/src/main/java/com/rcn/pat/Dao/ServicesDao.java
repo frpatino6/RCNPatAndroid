@@ -41,4 +41,8 @@ public interface ServicesDao {
     @Query(" delete FROM ServiceInfo " +
             " where strftime('%d', `FechaFinal`)< strftime('%d', DATE('now','localtime'))")
     void deleteOldServiceInfo();
+
+    @Query(" update ServiceInfo set FechaFinal = :fechaFinal " +
+            " where idService = :id")
+    void updateEndTimeServiceInfo(String fechaFinal, int id);
 }
