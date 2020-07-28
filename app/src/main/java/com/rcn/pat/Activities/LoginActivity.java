@@ -84,12 +84,13 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
 
         loginRepository = new LoginRepository(getApplicationContext());
+        
         if (BuildConfig.DEBUG) {
-            txtUserName.setText("frodriguezp");
-            txtPws.setText("bogota1*");
+            txtUserName.setText("");
+            txtPws.setText("");
         } else {
-            txtUserName.setText("frodriguezp");
-            txtPws.setText("bogota1*");
+            txtUserName.setText("");
+            txtPws.setText("");
         }
 
     }

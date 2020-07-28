@@ -20,7 +20,6 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-import com.rcn.pat.Activities.ListDriverServicesActivity;
 import com.rcn.pat.Activities.MainActivity;
 import com.rcn.pat.Global.BackgroundLocationUpdateService;
 import com.rcn.pat.R;
@@ -29,15 +28,42 @@ import java.util.List;
 import java.util.Objects;
 
 public class PatFirebaseService extends FirebaseMessagingService {
-    private static final String TAG = "PatFirebaseService";
-    private static final int ID_NOTIFICACION_CREAR = 1;
-    public static final String SERVICE_RESULT = "com.service.resultPatFirebaseService";
-    public static final String SERVICE_MESSAGE = "com.service.messagePatFirebaseService";
-    NotificationManager notificationManager;
     private LocalBroadcastManager localBroadcastManager;
+    private static final int ID_NOTIFICACION_CREAR = 1;
+    private static final String TAG = "PatFirebaseService";
 
-    public PatFirebaseService() {
+    @Override
+    public void onCreate() {
+        localBroadcastManager = LocalBroadcastManager.getInstance(this);
+    }
 
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    @Override
+    public void onMessageReceived(RemoteMessage remoteMessage) {
+        // ...
+
+        // TODO(developer): Handle FCM messages here.
+        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
+        Log.d(TAG, "From: " + remoteMessage.getFrom());
+        //sendNotification(remoteMessage);
+        createNotification();
+        // Check if message contains a data payload.
+        if (remoteMessage.getData().size() >= 0) {
+            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
+
+            if (remoteMessage.getData().values().size() > 0)
+                sendResult(remoteMessage.getData().values().toArray()[1].toString());
+            else
+                sendResult("");
+        }
+
+        // Check if message contains a notification payload.remoteMessage.getData().values().toArray()[1]
+        if (remoteMessage.getNotification() != null) {
+            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+        }
+
+        // Also if you intend on generating your own notifications as a result of a received FCM
+        // message, here is where that should be initiated. See sendNotification method below.
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)
@@ -116,6 +142,28 @@ public class PatFirebaseService extends FirebaseMessagingService {
         notificationManager.notify(0, builder.getNotification());
     }
 
+    private void sendResult(String message) {
+        Intent intent = new Intent(SERVICE_RESULT);
+        if (message != null)
+            intent.putExtra(SERVICE_MESSAGE, message);
+        localBroadcastManager.sendBroadcast(intent);
+    }
+
+    /**
+     * Called if InstanceID token is updated. This may occur if the security of
+     * the previous token had been compromised. Note that this is called when the InstanceID token
+     * is initially generated so this is where you would retrieve the token.
+     */
+    @Override
+    public void onNewToken(String token) {
+        Log.d(TAG, "Refreshed token: " + token);
+
+        // If you want to send messages to this application instance or
+        // manage this apps subscriptions on the server side, send the
+        // Instance ID token to your app server.
+
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -144,57 +192,11 @@ public class PatFirebaseService extends FirebaseMessagingService {
 
         notificationManager.notify(0, notificationBuilder.build());
     }
+    public static final String SERVICE_RESULT = "com.service.resultPatFirebaseService";
+    public static final String SERVICE_MESSAGE = "com.service.messagePatFirebaseService";
+    NotificationManager notificationManager;
 
-    @Override
-    public void onCreate() {
-        localBroadcastManager = LocalBroadcastManager.getInstance(this);
-    }
-
-    private void sendResult(String message) {
-        Intent intent = new Intent(SERVICE_RESULT);
-        if (message != null)
-            intent.putExtra(SERVICE_MESSAGE, message);
-        localBroadcastManager.sendBroadcast(intent);
-    }
-
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    public void onMessageReceived(RemoteMessage remoteMessage) {
-        // ...
-
-        // TODO(developer): Handle FCM messages here.
-        // Not getting messages here? See why this may be: https://goo.gl/39bRNJ
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
-        //sendNotification(remoteMessage);
-        createNotification();
-        // Check if message contains a data payload.
-        if (remoteMessage.getData().size() > 0) {
-            Log.d(TAG, "Message data payload: " + remoteMessage.getData());
-
-            sendResult(remoteMessage.getData().values().toArray()[1].toString());
-        }
-
-        // Check if message contains a notification payload.remoteMessage.getData().values().toArray()[1]
-        if (remoteMessage.getNotification() != null) {
-            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
-        }
-
-        // Also if you intend on generating your own notifications as a result of a received FCM
-        // message, here is where that should be initiated. See sendNotification method below.
-    }
-
-    /**
-     * Called if InstanceID token is updated. This may occur if the security of
-     * the previous token had been compromised. Note that this is called when the InstanceID token
-     * is initially generated so this is where you would retrieve the token.
-     */
-    @Override
-    public void onNewToken(String token) {
-        Log.d(TAG, "Refreshed token: " + token);
-
-        // If you want to send messages to this application instance or
-        // manage this apps subscriptions on the server side, send the
-        // Instance ID token to your app server.
+    public PatFirebaseService() {
 
     }
 

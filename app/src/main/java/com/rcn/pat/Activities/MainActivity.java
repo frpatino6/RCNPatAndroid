@@ -447,6 +447,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
+                new IntentFilter(BackgroundLocationUpdateService.SERVICE_RESULT));
+
+        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
+                new IntentFilter(PatFirebaseService.SERVICE_RESULT));
+    }
+
+    @Override
+    protected void onStop() {
+        try {
+            unregisterReceiver(networkStateReceiver);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        super.onStop();
+    }
+
     @RequiresApi(api = VERSION_CODES.KITKAT)
     private void executeBackgoundValidations(String speed) {
         if (serviceInfo != null)
@@ -472,27 +493,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         validateIfServiceReadyToEnd(serviceInfo);
         toggleButtons();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverBackgroundService),
-                new IntentFilter(BackgroundLocationUpdateService.SERVICE_RESULT));
-
-        LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
-                new IntentFilter(PatFirebaseService.SERVICE_RESULT));
-    }
-
-    @Override
-    protected void onStop() {
-        try {
-            unregisterReceiver(networkStateReceiver);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        super.onStop();
     }
 
     private void asyncListPausaReasons() {
@@ -645,10 +645,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 // Define Response class to correspond to the JSON response returned
                                 ServiceInfo data = gson.fromJson(res, token.getType());
                                 serviceInfo = serviceRepository.getService(data.getId());
+
+                                if (serviceInfo == null)
+                                    serviceInfo = GlobalClass.getInstance().getCurrentService();
                                 serviceInfo.setFechaFinal(data.getFechaFinal());
 
                                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
-                                Date d =  sdf.parse(serviceInfo.getFechaFinal());
+                                Date d = sdf.parse(serviceInfo.getFechaFinal());
                                 Calendar cal = Calendar.getInstance();
                                 cal.setTime(d);
                                 cal.add(Calendar.MINUTE, serviceInfo.getMinutesAfter());
