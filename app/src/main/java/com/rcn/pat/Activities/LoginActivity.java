@@ -86,8 +86,8 @@ public class LoginActivity extends AppCompatActivity {
         loginRepository = new LoginRepository(getApplicationContext());
         
         if (BuildConfig.DEBUG) {
-            txtUserName.setText("");
-            txtPws.setText("");
+            txtUserName.setText("frodriguezp");
+            txtPws.setText("bogota1*");
         } else {
             txtUserName.setText("");
             txtPws.setText("");

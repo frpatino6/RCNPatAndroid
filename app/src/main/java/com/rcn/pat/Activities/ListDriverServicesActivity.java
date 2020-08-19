@@ -47,7 +47,6 @@ import java.util.List;
 import cz.msebera.android.httpclient.Header;
 
 public class ListDriverServicesActivity extends AppCompatActivity {
-    private static final String TAG = "LoginActivity";
     private ServiceAdapter adapter;
     private BroadcastReceiver broadcastReceiverFirebase;
     private ArrayList<ServiceInfo> data;
@@ -57,6 +56,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private String pws;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private static final String TAG = "LoginActivity";
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -104,7 +104,6 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                                 Gson gson = new GsonBuilder().create();
                                 // Define Response class to correspond to the JSON response returned
                                 data = gson.fromJson(res, token.getType());
-
                                 Collections.sort(data, new SortbyDate());
 
                                 GlobalClass.getInstance().setListServicesDriver(data);
@@ -115,7 +114,17 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                                         goDetailService(idServicio);
                                     }
                                 });
+                                for (ServiceInfo service : data) {
+                                    ServiceInfo serviceInfo =serviceRepository.getService(service.getId());
+                                    if(serviceInfo!=null){
+                                        serviceInfo.setFechaFinal(service.getFechaFinal());
+                                        serviceInfo.setIshalfhourNotify(false);
+                                        serviceInfo.setIshourNotify(false);
 
+
+                                        serviceRepository.updateService(serviceInfo);
+                                    }
+                                }
                                 recyclerView.setAdapter(adapter);
                                 deleteOldServices();
                                 Log.i(TAG, "asyncListProductions Ejecutado con éxito");
@@ -145,7 +154,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     }
 
     private void deleteOldServices() {
-        new ServiceRepository(getApplicationContext()).deleteOldServiceInfo();
+        serviceRepository.deleteOldServiceInfo();
     }
 
     @Override
@@ -158,6 +167,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         layoutManager = new LinearLayoutManager(ListDriverServicesActivity.this);
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
+        serviceRepository = new ServiceRepository(getApplicationContext());
 
         swipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
@@ -212,4 +222,6 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         LocalBroadcastManager.getInstance(this).registerReceiver((broadcastReceiverFirebase),
                 new IntentFilter(PatFirebaseService.SERVICE_RESULT));
     }
+
+    ServiceRepository serviceRepository;
 }

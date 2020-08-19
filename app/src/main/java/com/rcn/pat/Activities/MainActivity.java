@@ -318,28 +318,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @RequiresApi(api = VERSION_CODES.KITKAT)
     public void stopTracking(boolean isAtomaticStoped) {
-        String observations = "";
-        mTracking = false;
-        if (serviceInfo == null)
-            serviceInfo = serviceRepository.getStartetService();
+        try {
+            String observations = "";
+            mTracking = false;
+            if (serviceInfo == null)
+                serviceInfo = serviceRepository.getStartetService();
 
-        serviceInfo.setStarted(false);
-        serviceInfo.setPaused(false);
-        serviceInfo.setStoped(true);
-        serviceInfo.setPausedId(2);
-        serviceRepository.updateService(serviceInfo);
+            serviceInfo.setStarted(false);
+            serviceInfo.setPaused(false);
+            serviceInfo.setStoped(true);
+            serviceInfo.setPausedId(2);
+            serviceRepository.updateService(serviceInfo);
 
-        if (isAtomaticStoped) {
-            observations = "Servicio finalizado automáticamente";
+            if (isAtomaticStoped) {
+                observations = "Servicio finalizado automáticamente";
+            }
+            sendLastLocation(serviceInfo, observations);
+
+            if (GlobalClass.getInstance().isNetworkAvailable())
+                asyncLocations();
+
+            serviceRepository.deleteAllService();
+            stopBackgroundServices();
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+            showConfirmDialog(e.getMessage());
         }
-        sendLastLocation(serviceInfo, observations);
-
-        if (GlobalClass.getInstance().isNetworkAvailable())
-            asyncLocations();
-
-        serviceRepository.deleteAllService();
-        stopBackgroundServices();
-        finish();
     }
 
     @Override
@@ -1103,37 +1108,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void toggleButtons() {
 
-        if (haveActiveService) {
-            btnPause.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
-            btnStart.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
-            btnStop.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
-        } else {
+        if (serviceInfo != null) {
+            if (haveActiveService) {
+                btnPause.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
+                btnStart.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
+                btnStop.setVisibility(haveActiveService == true ? View.GONE : View.VISIBLE);
+            } else {
 
-            if (serviceInfo.isStarted()) {
-                btnPause.setVisibility(View.VISIBLE);
-                btnStart.setVisibility(View.INVISIBLE);
-                btnStop.setVisibility(View.VISIBLE);
+                if (serviceInfo.isStarted()) {
+                    btnPause.setVisibility(View.VISIBLE);
+                    btnStart.setVisibility(View.INVISIBLE);
+                    btnStop.setVisibility(View.VISIBLE);
+                }
+                if (serviceInfo.isPaused()) {
+                    btnPause.setVisibility(View.INVISIBLE);
+                    btnStart.setVisibility(View.VISIBLE);
+                    btnStop.setVisibility(View.VISIBLE);
+                    lblStart.setText("Reaundar");
+                    btnStart.setTextColor(Color.parseColor("#23c6c8"));
+                    lblStart.setTextColor(Color.parseColor("#23c6c8"));
+                }
+                if (serviceInfo.isStoped()) {
+                    btnPause.setVisibility(View.INVISIBLE);
+                    btnStop.setVisibility(View.INVISIBLE);
+                    btnStart.setVisibility(View.VISIBLE);
+                    lblStart.setText("Iniciar");
+                    lblStart.setTextColor(Color.parseColor("#1ab394"));
+                    btnStart.setTextColor(Color.parseColor("#1ab394"));
+                }
             }
-            if (serviceInfo.isPaused()) {
-                btnPause.setVisibility(View.INVISIBLE);
-                btnStart.setVisibility(View.VISIBLE);
-                btnStop.setVisibility(View.VISIBLE);
-                lblStart.setText("Reaundar");
-                btnStart.setTextColor(Color.parseColor("#23c6c8"));
-                lblStart.setTextColor(Color.parseColor("#23c6c8"));
-            }
-            if (serviceInfo.isStoped()) {
-                btnPause.setVisibility(View.INVISIBLE);
-                btnStop.setVisibility(View.INVISIBLE);
-                btnStart.setVisibility(View.VISIBLE);
-                lblStart.setText("Iniciar");
-                lblStart.setTextColor(Color.parseColor("#1ab394"));
-                btnStart.setTextColor(Color.parseColor("#1ab394"));
-            }
+            lblStop.setVisibility(btnStop.getVisibility());
+            lblPause.setVisibility(btnPause.getVisibility());
+            lblStart.setVisibility(btnStart.getVisibility());
         }
-        lblStop.setVisibility(btnStop.getVisibility());
-        lblPause.setVisibility(btnPause.getVisibility());
-        lblStart.setVisibility(btnStart.getVisibility());
 
     }
 

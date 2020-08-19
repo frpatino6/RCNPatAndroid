@@ -24,7 +24,7 @@
     <dimen name="action_icon_size">50dp</dimen>
     <dimen name="detail_text_size">40dp</dimen>
     <dimen name="icon_margin">40dp</dimen>
-    <dimen name="font_size_detail_services">25dp</dimen>
+    <dimen name="font_size_detail_services">20dp</dimen>
     <dimen name="margin_top_main_activity">30dp</dimen>
     <dimen name="lbl_actions_button_text">25dp</dimen>
 </resources>
