@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,7 +38,9 @@ import com.rcn.pat.Global.SortbyDate;
 import com.rcn.pat.Global.onClickVIewDetail;
 import com.rcn.pat.Notifications.PatFirebaseService;
 import com.rcn.pat.R;
+import com.rcn.pat.Repository.LoginRepository;
 import com.rcn.pat.Repository.ServiceRepository;
+import com.rcn.pat.ViewModels.LoginViewModel;
 import com.rcn.pat.ViewModels.PausaReasons;
 import com.rcn.pat.ViewModels.ServiceInfo;
 
@@ -53,10 +57,30 @@ public class ListDriverServicesActivity extends AppCompatActivity {
     private ArrayList<PausaReasons> dataPausaReasons;
     private String deviceToken;
     private LinearLayoutManager layoutManager;
+    private LoginRepository loginRepository;
     private String pws;
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private static final String TAG = "LoginActivity";
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_list_services, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+
+        int id = item.getItemId();
+        if (id == R.id.logout) {
+            LoginViewModel loginViewModel = new LoginViewModel();
+            loginViewModel = loginRepository.getLoginByUserName();
+            loginRepository.logOut(loginViewModel);
+            finish();
+        }
+        return false;
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -115,8 +139,8 @@ public class ListDriverServicesActivity extends AppCompatActivity {
                                     }
                                 });
                                 for (ServiceInfo service : data) {
-                                    ServiceInfo serviceInfo =serviceRepository.getService(service.getId());
-                                    if(serviceInfo!=null){
+                                    ServiceInfo serviceInfo = serviceRepository.getService(service.getId());
+                                    if (serviceInfo != null) {
                                         serviceInfo.setFechaFinal(service.getFechaFinal());
                                         serviceInfo.setIshalfhourNotify(false);
                                         serviceInfo.setIshourNotify(false);
@@ -186,7 +210,7 @@ public class ListDriverServicesActivity extends AppCompatActivity {
             }
         };
         getCurrentDeviceToken();
-
+        loginRepository = new LoginRepository(getApplicationContext());
 
     }
 

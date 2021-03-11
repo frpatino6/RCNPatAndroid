@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -54,6 +55,7 @@ public class LoginActivity extends AppCompatActivity {
     private LoginRepository loginRepository;
     private EditText txtPws;
     private EditText txtUserName;
+    private TextView txtVersion;
 
     @RequiresApi(api = VERSION_CODES.KITKAT)
     @Override
@@ -80,6 +82,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void InitializaControls() {
         txtUserName = findViewById(R.id.txtUserName);
+        txtVersion = findViewById(R.id.txtVersion);
         txtPws = findViewById(R.id.txtPws);
         btnLogin = findViewById(R.id.btnLogin);
 
@@ -87,12 +90,12 @@ public class LoginActivity extends AppCompatActivity {
         
         if (BuildConfig.DEBUG) {
             txtUserName.setText("frodriguezp");
-            txtPws.setText("bogota1*");
+            txtPws.setText("Cuaalquierc054");
         } else {
             txtUserName.setText("");
             txtPws.setText("");
         }
-
+        txtVersion.setText(BuildConfig.VERSION_NAME);
     }
 
     private void InitializaEvents() {
