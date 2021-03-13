@@ -1,12 +1,16 @@
 package com.rcn.pat.Activities;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -76,10 +80,103 @@ public class ListDriverServicesActivity extends AppCompatActivity {
         if (id == R.id.logout) {
             LoginViewModel loginViewModel = new LoginViewModel();
             loginViewModel = loginRepository.getLoginByUserName();
-            loginRepository.logOut(loginViewModel);
-            finish();
+
+            if (!validateServiceState())
+                showConfirmDialog("¿Está seguro de cerrar la sesión?", loginViewModel);
+            else
+                showAlertDialog("No es posible cerrar la sesión en este momento, tiene un servicio activo");
+
         }
         return false;
+    }
+
+    private boolean validateServiceState() {
+        ServiceInfo serviceInfo = serviceRepository.getStartetService();
+
+        if(serviceInfo == null){
+            return false;
+        }
+        return serviceInfo.isStarted() || serviceInfo.isPaused();
+    }
+
+    private void showConfirmDialog(String contentMessage, final LoginViewModel loginViewModel) {
+        // Use the Builder class for convenient dialog construction
+        try {
+            AlertDialog.Builder alert = new AlertDialog.Builder(ListDriverServicesActivity.this);
+            alert.setTitle("Confirmación");
+            alert.setCancelable(false);
+            alert.setMessage(contentMessage);
+            alert.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    loginRepository.logOut(loginViewModel);
+                    finish();
+                }
+            });
+            alert.setNegativeButton("Cancelar", new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+
+            final AlertDialog alertDialog = alert.create();
+            alertDialog.show();
+            final Handler handler = new Handler();
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    alertDialog.dismiss();
+                }
+            };
+            alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    handler.removeCallbacks(runnable);
+                }
+            });
+            handler.postDelayed(runnable, 10000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private void showAlertDialog(String contentMessage) {
+        // Use the Builder class for convenient dialog construction
+        try {
+            AlertDialog.Builder alert = new AlertDialog.Builder(ListDriverServicesActivity.this);
+            alert.setTitle("Advertencia");
+            alert.setCancelable(false);
+            alert.setMessage(contentMessage);
+            alert.setPositiveButton("Aceptar", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+
+            final AlertDialog alertDialog = alert.create();
+            alertDialog.show();
+            final Handler handler = new Handler();
+            final Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    alertDialog.dismiss();
+                }
+            };
+            alertDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    handler.removeCallbacks(runnable);
+                }
+            });
+            handler.postDelayed(runnable, 10000);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Override

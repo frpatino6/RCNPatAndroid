@@ -90,7 +90,7 @@ public class LoginActivity extends AppCompatActivity {
         
         if (BuildConfig.DEBUG) {
             txtUserName.setText("frodriguezp");
-            txtPws.setText("Cuaalquierc054");
+            txtPws.setText("bogota1*");
         } else {
             txtUserName.setText("");
             txtPws.setText("");

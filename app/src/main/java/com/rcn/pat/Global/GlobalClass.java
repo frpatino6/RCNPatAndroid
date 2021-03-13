@@ -23,7 +23,7 @@ public class GlobalClass extends Application {
     private String docNumber;
     private ServiceInfo currentService;
     private ArrayList<ServiceInfo> listServicesDriver;
-    private String urlServices = "http://portalterceros.rcntv.com.co/API_Transportes/api/";
+    private String urlServices = "https://portalterceros.rcntv.com.co/API_Transportes/api/";
     //private String urlServices = "http://172.20.0.153/Intranet/GerenciaTI/API_Transportes/api/";
 
     //private String urlServices = "http://190.24.154.3/API_Transportes/api/";

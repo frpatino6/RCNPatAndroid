@@ -300,22 +300,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             permission.ACCESS_BACKGROUND_LOCATION)
                             == PackageManager.PERMISSION_GRANTED;
 
-            if (backgroundLocationPermissionApproved) {
-                // App can access location both in the foreground and in the background.
-                // Start your service that doesn't have a foreground service type
-                // defined.
-            } else {
-                // App can only access location in the foreground. Display a dialog
-                // warning the user that your app must have all-the-time access to
-                // location in order to function properly. Then, request background
-                // location.
+            if (!backgroundLocationPermissionApproved) {
                 ActivityCompat.requestPermissions(this, new String[]{
                                 Manifest.permission.ACCESS_BACKGROUND_LOCATION},
                         5111);
             }
         }
-
-
     }
 
     @RequiresApi(api = VERSION_CODES.KITKAT)
