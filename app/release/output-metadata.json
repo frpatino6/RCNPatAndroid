@@ -1,19 +1,17 @@
 {
-  "version": 1,
+  "version": 2,
   "artifactType": {
     "type": "APK",
     "kind": "Directory"
   },
   "applicationId": "com.rcn.pat",
-  "variantName": "release",
+  "variantName": "processReleaseResources",
   "elements": [
     {
       "type": "SINGLE",
       "filters": [],
-      "properties": [],
       "versionCode": 25,
-      "versionName": "1.5.0",
-      "enabled": true,
+      "versionName": "1.6.1",
       "outputFile": "app-release.apk"
     }
   ]

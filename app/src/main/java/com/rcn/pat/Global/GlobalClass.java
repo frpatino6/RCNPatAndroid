@@ -4,7 +4,6 @@ import android.app.Application;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.text.format.Time;
 
 import com.rcn.pat.ViewModels.ServiceInfo;
 
@@ -23,8 +22,8 @@ public class GlobalClass extends Application {
     private String docNumber;
     private ServiceInfo currentService;
     private ArrayList<ServiceInfo> listServicesDriver;
-    private String urlServices = "https://portalterceros.rcntv.com.co/API_Transportes/api/";
-    //private String urlServices = "http://172.20.0.153/Intranet/GerenciaTI/API_Transportes/api/";
+    // private String urlServices = "https://portalterceros.rcntv.com.co/API_Transportes/api/";
+    private String urlServices = "https://acc.rcntv.com.co/PAT/Api/";
 
     //private String urlServices = "http://190.24.154.3/API_Transportes/api/";
 
